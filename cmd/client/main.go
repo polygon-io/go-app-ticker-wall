@@ -9,8 +9,8 @@ import (
 	"github.com/goxjs/gl"
 	"github.com/goxjs/glfw"
 	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
-	"github.com/shibukawa/nanovgo"
-	"github.com/shibukawa/nanovgo/perfgraph"
+	"github.com/polygon-io/nanovgo"
+	"github.com/polygon-io/nanovgo/perfgraph"
 )
 
 type Pos struct {
