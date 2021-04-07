@@ -18,6 +18,9 @@ type TickerManager interface {
 
 	// TickerOffset determines what the offset should be for this ticker, on this screen.
 	TickerOffset(globalOffset int, ticker *Ticker) int
+
+	// GetPresentationData gets the presentation data.
+	GetPresentationData() *PresentationData
 }
 
 type PresentationData struct {
@@ -26,6 +29,8 @@ type PresentationData struct {
 	ScreenHeight       int // ScreenHeight is the height of the entire applications screen ( px ).
 	TickerBoxWidth     int // TickerBoxWidth is the total px width we allocate per ticker.
 	ScreenIndex        int // ScreenIndex is index of this screen in the sequence of displays. ( left to right ) ( starting at 1 ).
+	NumberOfScreens    int // NumberOfScreens is the total number of screens in this ticker wall cluster.
+	GlobalViewportSize int // GlobalViewportSize is the total size of all screens combined ( px ).
 }
 
 // DefaultManager is used to manage all tickers for an application. It knows important information for rendering.
@@ -47,6 +52,12 @@ func NewDefaultManager(presentationData *PresentationData) TickerManager {
 	return mgr
 }
 
+// GetPresentationData gets the presentation data.
+func (m *DefaultManager) GetPresentationData() *PresentationData {
+	return m.PresentationData
+}
+
+// TickerOffset determines what the offset should be for this ticker, on this screen.
 func (m *DefaultManager) TickerOffset(globalOffset int, ticker *Ticker) int {
 	localizedOffset := (globalOffset % (len(m.Tickers) * m.PresentationData.TickerBoxWidth))
 
@@ -60,6 +71,7 @@ func (m *DefaultManager) TickerOffset(globalOffset int, ticker *Ticker) int {
 	return offset
 }
 
+// DetermineTickersForRender takes a global offset and returns the ticker indices which should be rendered.
 func (m *DefaultManager) DetermineTickersForRender(globalOffset int) []*Ticker {
 	var tickers []*Ticker
 
@@ -78,6 +90,11 @@ func (m *DefaultManager) DetermineTickersForRender(globalOffset int) []*Ticker {
 		logrus.Trace("first index short: ", boundedFirst)
 		tickers = append(tickers, m.Tickers[boundedFirst:]...)
 		// Now we set first index to 0 since we have the overflow items.
+		firstIndex = 0
+	}
+
+	if firstIndex > len(m.Tickers) {
+		// logrus.Info("Invalid slice bounds - alertttt ")
 		firstIndex = 0
 	}
 

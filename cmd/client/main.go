@@ -6,11 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fogleman/ease"
 	"github.com/goxjs/gl"
 	"github.com/goxjs/glfw"
 	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
 	"github.com/polygon-io/nanovgo"
 	"github.com/polygon-io/nanovgo/perfgraph"
+	"github.com/sirupsen/logrus"
 )
 
 type Pos struct {
@@ -19,8 +21,12 @@ type Pos struct {
 }
 
 var (
-	ScreenWidth  = 1920
-	ScreenHeight = 300
+	ScreenWidth     = 1200
+	ScreenHeight    = 300
+	NumberOfScreens = 3
+
+	// AnimationDuration is the length of animations.
+	AnimationDuration = 750 // ms
 )
 
 func main() {
@@ -46,18 +52,20 @@ func main() {
 	glfw.SwapInterval(0)
 
 	ctx.CreateFont("sans", "fonts/Roboto-Regular.ttf")
+	ctx.CreateFont("sans-light", "fonts/Roboto-Light.ttf")
+	ctx.CreateFont("sans-bold", "fonts/Roboto-Bold.ttf")
 
-	pos := &Pos{
-		left: -1920,
-	}
-	go func() {
-		for {
-			pos.Lock()
-			pos.left += .5
-			pos.Unlock()
-			time.Sleep(4 * time.Millisecond)
-		}
-	}()
+	// pos := &Pos{
+	// 	left: -1920,
+	// }
+	// go func() {
+	// 	for {
+	// 		pos.Lock()
+	// 		pos.left += .5
+	// 		pos.Unlock()
+	// 		time.Sleep(4 * time.Millisecond)
+	// 	}
+	// }()
 
 	numbPtr := flag.Int("screenindex", 0, "Screen Index")
 	flag.Parse()
@@ -69,6 +77,8 @@ func main() {
 		ScreenGlobalOffset: (ScreenWidth * *numbPtr),
 		TickerBoxWidth:     1000,
 		ScreenIndex:        *numbPtr,
+		NumberOfScreens:    NumberOfScreens,
+		GlobalViewportSize: (NumberOfScreens * ScreenWidth),
 	})
 
 	mgr.AddTicker("AAPL", 355.65, 1.05, "Apple Inc.")
@@ -88,6 +98,12 @@ func main() {
 	ctx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	ctx.SetTextLineHeight(1.2)
 
+	specialMessage := true
+	startTimer := time.Now().Add(1 * time.Minute)
+	startTimer = startTimer.Truncate(time.Minute)
+	specialMessageTimeActivate := startTimer.UnixNano() / int64(time.Millisecond)
+	logrus.Info("activation time: ", specialMessageTimeActivate)
+
 	for !window.ShouldClose() {
 		fps.UpdateGraph()
 		gl.ClearColor(0, 0, 0, 0)
@@ -97,17 +113,21 @@ func main() {
 		gl.Enable(gl.CULL_FACE)
 		gl.Disable(gl.DEPTH_TEST)
 		ctx.BeginFrame(winWidth, winHeight, pixelRatio)
-		ctx.Save()
+		// ctx.Save()
 
-		t := int(time.Now().UnixNano() / int64(time.Millisecond*15))
+		t := int(time.Now().UnixNano() / int64(time.Millisecond*10))
 		// println(t)
 		// Actual application drawing.
-		pos.RLock()
+		// pos.RLock()
 		renderTickers(ctx, mgr, t)
-		pos.RUnlock()
+		// pos.RUnlock()
 
-		ctx.Restore()
-		fps.RenderGraph(ctx, 5, 5)
+		if specialMessage {
+			renderSpecialMessage(ctx, mgr, t, "Very Important Special Message... Read it!", int(specialMessageTimeActivate), 5000)
+		}
+
+		// ctx.Restore()
+		fps.RenderGraph(ctx, -50, -50)
 		ctx.EndFrame()
 		gl.Enable(gl.DEPTH_TEST)
 		window.SwapBuffers()
@@ -124,8 +144,71 @@ func renderTickers(ctx *nanovgo.Context, mgr tickerManager.TickerManager, global
 	}
 }
 
+func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager, globalOffset int, message string, activationTime int, visibleLifetimeMS int) {
+	t := int(time.Now().UnixNano() / int64(time.Millisecond))
+
+	// We are outside of this messages lifespan.
+	if t < activationTime || t > (activationTime+visibleLifetimeMS+AnimationDuration) {
+		return
+	}
+
+	// Text Settings.
+	textTopStart := float64(-300)
+	textTopEnd := float64(140)
+	textTop := textTopEnd
+
+	// BG Settings.
+	bgBottomStart := float64(0)
+	bgBottomEnd := float64(ScreenHeight)
+	bgBottom := bgBottomEnd
+	bgTop := (bgBottom - float64(ScreenHeight))
+
+	if t-activationTime < AnimationDuration { // Enter animation is in progress.
+		diff := t - activationTime
+		percentageCompleted := float64(diff) / float64(AnimationDuration)
+
+		// bg calcs
+		bgBottom = bgBottomStart - ((bgBottomStart - bgBottomEnd) * ease.OutElastic(percentageCompleted))
+		bgTop = (bgBottom - float64(ScreenHeight))
+
+		// text calcs
+		textTop = textTopStart - ((textTopStart - textTopEnd) * ease.OutElastic(percentageCompleted))
+
+	} else if t > activationTime+visibleLifetimeMS { // Exit animation in progress.
+		diff := t - (activationTime + visibleLifetimeMS)
+		percentageCompleted := float64(diff) / float64(AnimationDuration)
+
+		// bg calcs
+		bgBottom = bgBottomEnd - ((bgBottomEnd - bgBottomStart) * ease.InElastic(percentageCompleted))
+		bgTop = (bgBottom - float64(ScreenHeight))
+
+		// text calcs
+		textTop = textTopEnd - ((textTopEnd - textTopStart) * ease.InElastic(percentageCompleted))
+	}
+
+	ctx.Save()
+	defer ctx.Restore()
+
+	ctx.BeginPath()
+	// Determine where the box should start ( may not be on our screen ).
+	left := -float32(mgr.GetPresentationData().ScreenGlobalOffset)
+	// Position bg.
+	ctx.RoundedRect(left, float32(bgTop), float32(mgr.GetPresentationData().GlobalViewportSize), float32(bgBottom), 0)
+	ctx.SetFillColor(nanovgo.RGBA(122, 255, 122, 222))
+	ctx.Fill()
+
+	ctx.SetFontSize(96.0)
+	ctx.SetFontFace("sans-bold")
+	ctx.SetTextAlign(nanovgo.AlignCenter | nanovgo.AlignMiddle)
+
+	// ctx.SetFontBlur(0)
+	ctx.SetFillColor(nanovgo.RGBA(255, 255, 255, 255))
+	middle := (float32(mgr.GetPresentationData().GlobalViewportSize) / 2) - float32(mgr.GetPresentationData().ScreenGlobalOffset)
+	ctx.Text(middle, float32(textTop), message)
+}
+
 func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker *tickerManager.Ticker, globalOffset int) {
-	ctx.SetFontFace("sans")
+	ctx.SetFontFace("sans-bold")
 	ctx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	ctx.SetTextLineHeight(1.2)
 	ctx.SetFontSize(156.0)
@@ -139,8 +222,9 @@ func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker 
 
 	tickerOffset := mgr.TickerOffset(globalOffset, ticker)
 
-	ctx.TextBox(float32(tickerOffset), 50, 900, ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
+	ctx.TextBox(float32(tickerOffset), 40, 900, ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
 	ctx.SetFontSize(56)
-	ctx.TextBox(float32(tickerOffset), 190, 900, ticker.CompanyName)
+	ctx.SetFontFace("sans-light")
+	ctx.TextBox(float32(tickerOffset), 180, 900, ticker.CompanyName)
 
 }
