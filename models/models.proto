@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package models;
+
+service TickerWallLeader {
+    // Executes a query.
+    rpc RegisterAndListenForUpdates(Screen) returns (stream ScreenCluster) {}
+
+    rpc ListenForTickerUpdates(Screen) returns (stream Ticker) {}
+}
+
+
+// Ticker is used to update a tickers information ( leader -> follower ).
+message Ticker {
+    string Ticker = 1;
+    string CompanyName = 2;
+    double Price = 3;
+    double PriceChangePercentage = 4;
+    int32 Index = 5;
+}
+
+// Screen contains all screen information about an individual screen.
+message Screen {
+    int32 Width = 1;
+    int32 Height = 2;
+    int32 Index = 3;
+    int64 ScreenGlobalOffset = 4; // This screens (0,0) offset in context of the cluster.
+}
+
+// ScreenCluster contains information about the whole screen cluster.
+message ScreenCluster {
+    int32 NumberOfScreens = 1;
+    int32 TickerBoxWidth = 2;
+    int64 GlobalViewportSize = 3;
+
+    repeated Screen Screens = 4;
+}

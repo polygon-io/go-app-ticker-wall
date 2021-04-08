@@ -24,7 +24,7 @@ func TestSimpleFirstScreen(t *testing.T) {
 	})
 
 	AddTickersToManager(mgr)
-	globalOffset := 200
+	globalOffset := int64(200)
 
 	// Get the indices of which tickers should be rendered on THIS managers screen.
 	tickers := mgr.DetermineTickersForRender(globalOffset)
@@ -58,7 +58,7 @@ func TestSimpleFirstScreen2(t *testing.T) {
 	})
 
 	AddTickersToManager(mgr)
-	globalOffset := 500
+	globalOffset := int64(500)
 
 	// Get the indices of which tickers should be rendered on THIS managers screen.
 	tickers := mgr.DetermineTickersForRender(globalOffset)
@@ -92,7 +92,7 @@ func TestSimpleFirstScreenWrappingForward(t *testing.T) {
 	})
 
 	AddTickersToManager(mgr)
-	globalOffset := 1200
+	globalOffset := int64(1200)
 
 	// Get the indices of which tickers should be rendered on THIS managers screen.
 	tickers := mgr.DetermineTickersForRender(globalOffset)
@@ -126,7 +126,7 @@ func TestSimpleFirstScreenWrappingForward2(t *testing.T) {
 	})
 
 	AddTickersToManager(mgr)
-	globalOffset := 1900
+	globalOffset := int64(1900)
 
 	// Get the indices of which tickers should be rendered on THIS managers screen.
 	tickers := mgr.DetermineTickersForRender(globalOffset)
@@ -160,7 +160,7 @@ func TestSecondScreenWrappingBackward(t *testing.T) {
 	})
 
 	AddTickersToManager(mgr)
-	globalOffset := 200
+	globalOffset := int64(200)
 
 	// Get the indices of which tickers should be rendered on THIS managers screen.
 	tickers := mgr.DetermineTickersForRender(globalOffset)

@@ -1,16 +1,12 @@
 package manager
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/polygon-io/go-app-ticker-wall/models"
+)
 
 type Ticker struct {
 	sync.RWMutex
-
-	// Presentation data
-	Index int
-
-	// Actual market data
-	Ticker                string
-	Price                 float64
-	PriceChangePercentage float64
-	CompanyName           string
+	models.Ticker
 }
