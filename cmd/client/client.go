@@ -47,7 +47,11 @@ func (t *TickerWallClient) Run(ctx context.Context) error {
 		// Read message.
 		update, err := updateListener.Recv()
 		if err == io.EOF {
-			break
+			return nil
+		}
+
+		if update == nil {
+			logrus.Warning("Update message empty...")
 		}
 
 		switch update.UpdateType {
