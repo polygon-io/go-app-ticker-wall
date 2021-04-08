@@ -26,14 +26,21 @@ func (t *TickerWallLeader) RegisterAndListenForUpdates(screen *models.Screen, st
 		t.removeScreenFromCluster(screenClient) // When we disconnect, remove from cluster.
 	}()
 
-	// Start update listener until channel is closed.
-	for update := range screenClient.Updates {
-		if err := screenClient.Stream.Send(update); err != nil {
-			return err
+	for {
+		select {
+		case <-stream.Context().Done():
+			// Client has disconnected.
+			return nil
+		case update, ok := <-screenClient.Updates:
+			if !ok {
+				return nil
+			}
+
+			if err := screenClient.Stream.Send(update); err != nil {
+				return err
+			}
 		}
 	}
-
-	return nil
 }
 
 // GetTickers returns our current state of ticker data.
