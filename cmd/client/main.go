@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"time"
 
 	"github.com/goxjs/gl"
@@ -10,72 +10,113 @@ import (
 	"github.com/polygon-io/nanovgo"
 	"github.com/polygon-io/nanovgo/perfgraph"
 	"github.com/sirupsen/logrus"
+
+	"github.com/kelseyhightower/envconfig"
+	tombv2 "gopkg.in/tomb.v2"
 )
+
+const maxMessageSize = 1024 * 1024 * 1 // 1MB
 
 var (
 	// AnimationDuration is the length of animations.
 	AnimationDuration = 750 // ms
 )
 
-func main() {
-	screenIndexPtr := flag.Int("screenindex", 0, "Screen Index")
-	screenWidthPtr := flag.Int("screenwidth", 1920, "Constant size of each screen width")
-	screenHeightPtr := flag.Int("screenheight", 300, "Constant size of each screen height")
-	totalScreensPtr := flag.Int("totalscreens", 1, "Total number of screens")
-	flag.Parse()
+var cfg ServiceConfig
 
-	err := glfw.Init(gl.ContextWatcher)
+type ServiceConfig struct {
+	// Service details
+	LogLevel string `split_words:"true" default:"DEBUG"`
+	Leader   string `split_words:"true" default:"localhost:6886"`
+
+	// Local Presentation Settings:
+	ScreenWidth  int `split_words:"true" default:"1200"`
+	ScreenHeight int `split_words:"true" default:"300"`
+	ScreenIndex  int `split_words:"true" default:"2"`
+}
+
+func run() error {
+	// Global top level context.
+	tomb, ctx := tombv2.WithContext(context.Background())
+
+	// Parse Env Vars:
+	err := envconfig.Process("", &cfg)
 	if err != nil {
-		panic(err)
+		return err
+	}
+
+	// Set Log Levels
+	l, err := logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		logrus.WithField("err", err).Warn("parse log level")
+	} else {
+		logrus.SetLevel(l)
+	}
+
+	if err := glfw.Init(gl.ContextWatcher); err != nil {
+		return err
 	}
 	defer glfw.Terminate()
 
-	window, err := glfw.CreateWindow(*screenWidthPtr, *screenHeightPtr, "Polygon Ticker Wall", nil, nil)
+	window, err := glfw.CreateWindow(cfg.ScreenWidth, cfg.ScreenHeight, "Polygon Ticker Wall", nil, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	window.MakeContextCurrent()
 
 	// ctx, err := nanovgo.NewContext(0)
-	ctx, err := nanovgo.NewContext(0)
-	defer ctx.Delete()
+	nanoCtx, err := nanovgo.NewContext(0)
+	defer nanoCtx.Delete()
 	if err != nil {
 		panic(err)
 	}
 
 	glfw.SwapInterval(0)
+	createFonts(nanoCtx)
 
-	ctx.CreateFont("sans", "fonts/Roboto-Regular.ttf")
-	ctx.CreateFont("sans-light", "fonts/Roboto-Light.ttf")
-	ctx.CreateFont("sans-bold", "fonts/Roboto-Bold.ttf")
-
-	// Ticker Manager
+	// Ticker Manager. By default we believe we are the only one. Once we connect to leader we will get updated info.
 	mgr := tickerManager.NewDefaultManager(&tickerManager.PresentationData{
-		ScreenWidth:        *screenWidthPtr,
-		ScreenHeight:       *screenHeightPtr,
-		ScreenGlobalOffset: int64(*screenWidthPtr * *screenIndexPtr),
-		TickerBoxWidth:     1000,
-		ScreenIndex:        *screenIndexPtr,
-		NumberOfScreens:    *totalScreensPtr,
-		GlobalViewportSize: int64(*totalScreensPtr * *screenWidthPtr),
+		ScreenWidth:        cfg.ScreenWidth,
+		ScreenHeight:       cfg.ScreenHeight,
+		ScreenGlobalOffset: 0,
+		TickerBoxWidth:     cfg.ScreenWidth,
+		ScreenIndex:        cfg.ScreenIndex,
+		NumberOfScreens:    1,
+		GlobalViewportSize: int64(cfg.ScreenWidth),
 	})
 
-	mgr.AddTicker("AAPL", 355.65, 1.05, "Apple Inc.")
-	mgr.AddTicker("AMD", 241.65, -.05, "Advanced Micro Devices Inc.")
-	mgr.AddTicker("BRK.B", 955.65, .35, "Berkshire Hathaway Inc.")
-	mgr.AddTicker("SNAP", 55.65, 2.19, "Snap Inc.")
-	mgr.AddTicker("MSFT", 255.65, -0.19, "Microsoft Inc.")
-	mgr.AddTicker("NFLX", 565.65, 4.19, "Netflix Inc.")
+	// Ticker wall client.
+	tickerWallClient := NewTickerWallClient(&cfg, mgr)
+	defer tickerWallClient.Close()
 
+	// Create GRPC connection for the client.
+	if err := tickerWallClient.CreateGRPCClient(); err != nil {
+		return err
+	}
+
+	// Load initial tickers
+	if err := tickerWallClient.LoadTickers(ctx); err != nil {
+		return err
+	}
+
+	// tomb will context the context
+	tomb.Go(func() error {
+		return tickerWallClient.Run(ctx)
+	})
+
+	return createRenderingLoop(ctx, nanoCtx, window, mgr)
+}
+
+func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *glfw.Window, mgr tickerManager.TickerManager) error {
 	fps := perfgraph.NewPerfGraph("Frame Time", "sans")
 	fbWidth, fbHeight := window.GetFramebufferSize()
 	winWidth, winHeight := window.GetSize()
 	pixelRatio := float32(fbWidth) / float32(winWidth)
 	gl.Viewport(0, 0, fbWidth, fbHeight)
 
-	ctx.SetFontFace("sans")
-	ctx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
-	ctx.SetTextLineHeight(1.2)
+	nanoCtx.SetFontFace("sans")
+	nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
+	nanoCtx.SetTextLineHeight(1.2)
 
 	specialMessage := true
 	startTimer := time.Now().Add(1 * time.Minute)
@@ -91,25 +132,38 @@ func main() {
 		gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 		gl.Enable(gl.CULL_FACE)
 		gl.Disable(gl.DEPTH_TEST)
-		ctx.BeginFrame(winWidth, winHeight, pixelRatio)
-		// ctx.Save()
+		nanoCtx.BeginFrame(winWidth, winHeight, pixelRatio)
+		// nanoCtx.Save()
 
 		t := time.Now().UnixNano() / int64(time.Millisecond*10)
 		// println(t)
 		// Actual application drawing.
-		renderTickers(ctx, mgr, t)
+		renderTickers(nanoCtx, mgr, t)
 
 		if specialMessage {
-			renderSpecialMessage(ctx, mgr, t, "Very Important Special Message... Read it!", int(specialMessageTimeActivate), 5000)
+			renderSpecialMessage(nanoCtx, mgr, t, "Very Important Special Message... Read it!", int(specialMessageTimeActivate), 5000)
 		}
 
-		// ctx.Restore()
-		fps.RenderGraph(ctx, -50, -50)
-		ctx.EndFrame()
+		// nanoCtx.Restore()
+		fps.RenderGraph(nanoCtx, -50, -50)
+		nanoCtx.EndFrame()
 		gl.Enable(gl.DEPTH_TEST)
 		window.SwapBuffers()
 		glfw.PollEvents()
 		// time.Sleep(time.Millisecond * 16)
 	}
 
+	return ctx.Err()
+}
+
+func createFonts(ctx *nanovgo.Context) {
+	ctx.CreateFont("sans", "fonts/Roboto-Regular.ttf")
+	ctx.CreateFont("sans-light", "fonts/Roboto-Light.ttf")
+	ctx.CreateFont("sans-bold", "fonts/Roboto-Bold.ttf")
+}
+
+func main() {
+	if err := run(); err != nil {
+		logrus.WithError(err).Error("Program exiting")
+	}
 }
