@@ -18,9 +18,11 @@ type Pos struct {
 	left float32
 }
 
-var (
-	ScreenWidth  = 1920
-	ScreenHeight = 300
+const (
+	ScreenWidth      = 1920
+	ScreenHeight     = 300
+	TargetFPS        = 90
+	DurationPerFrame = time.Second / TargetFPS
 )
 
 func main() {
@@ -30,11 +32,20 @@ func main() {
 	}
 	defer glfw.Terminate()
 
+	// Fullscreem:
+	// window, err := glfw.CreateWindow(ScreenWidth, ScreenHeight, "Polygon Ticker Wall", glfw.GetPrimaryMonitor(), nil)
+	// Windowed:
 	window, err := glfw.CreateWindow(ScreenWidth, ScreenHeight, "Polygon Ticker Wall", nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	window.MakeContextCurrent()
+
+	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		if key == glfw.KeyEscape {
+			w.SetShouldClose(true)
+		}
+	})
 
 	// ctx, err := nanovgo.NewContext(0)
 	ctx, err := nanovgo.NewContext(0)
@@ -48,14 +59,14 @@ func main() {
 	ctx.CreateFont("sans", "fonts/Roboto-Regular.ttf")
 
 	pos := &Pos{
-		left: -1920,
+		left: float32(time.Now().UnixNano() / int64(time.Millisecond*15) % 1920),
 	}
 	go func() {
 		for {
 			pos.Lock()
-			pos.left += .5
+			pos.left += 1
 			pos.Unlock()
-			time.Sleep(4 * time.Millisecond)
+			time.Sleep(16 * time.Millisecond)
 		}
 	}()
 
@@ -88,16 +99,19 @@ func main() {
 	ctx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	ctx.SetTextLineHeight(1.2)
 
+	gl.ClearColor(0, 0, 0, 0)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	gl.Enable(gl.BLEND)
+	gl.Disable(gl.CULL_FACE)
+	gl.Disable(gl.DEPTH_TEST)
+
 	for !window.ShouldClose() {
+		start := time.Now()
 		fps.UpdateGraph()
-		gl.ClearColor(0, 0, 0, 0)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
-		gl.Enable(gl.BLEND)
-		gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.Enable(gl.CULL_FACE)
-		gl.Disable(gl.DEPTH_TEST)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+
 		ctx.BeginFrame(winWidth, winHeight, pixelRatio)
-		ctx.Save()
+		//ctx.Save()
 
 		t := int(time.Now().UnixNano() / int64(time.Millisecond*15))
 		// println(t)
@@ -106,13 +120,13 @@ func main() {
 		renderTickers(ctx, mgr, t)
 		pos.RUnlock()
 
-		ctx.Restore()
+		//ctx.Restore()
 		fps.RenderGraph(ctx, 5, 5)
 		ctx.EndFrame()
-		gl.Enable(gl.DEPTH_TEST)
 		window.SwapBuffers()
 		glfw.PollEvents()
 		// time.Sleep(time.Millisecond * 16)
+		time.Sleep(DurationPerFrame - time.Since(start))
 	}
 
 }
