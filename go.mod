@@ -6,6 +6,7 @@ require (
 	github.com/MarinX/keylogger v0.0.0-20200818111051-af3ca74c8049 // indirect
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807 // indirect
 	github.com/fogleman/ease v0.0.0-20170301025033-8da417bf1776
+	github.com/gin-gonic/gin v1.7.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/google/gousb v1.1.1 // indirect
@@ -21,5 +22,7 @@ require (
 	go.bug.st/serial.v1 v0.0.0-20180827123349-5f7892a7bb45 // indirect
 	gobot.io/x/gobot v1.15.0 // indirect
 	google.golang.org/grpc v1.37.0
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/go-playground/validator.v9 v9.29.1 // indirect
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637 // indirect
 )

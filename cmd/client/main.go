@@ -83,6 +83,7 @@ func run() error {
 		ScreenIndex:        cfg.ScreenIndex,
 		NumberOfScreens:    1,
 		GlobalViewportSize: int64(cfg.ScreenWidth),
+		ScrollSpeed:        10,
 	})
 
 	// Ticker wall client.
@@ -135,7 +136,7 @@ func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *
 		nanoCtx.BeginFrame(winWidth, winHeight, pixelRatio)
 		// nanoCtx.Save()
 
-		t := time.Now().UnixNano() / int64(time.Millisecond*10)
+		t := time.Now().UnixNano() / int64(mgr.GetPresentationData().ScrollSpeed*int(time.Millisecond))
 		// println(t)
 		// Actual application drawing.
 		renderTickers(nanoCtx, mgr, t)

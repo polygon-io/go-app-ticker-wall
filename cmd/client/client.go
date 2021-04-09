@@ -92,6 +92,7 @@ func (t *TickerWallClient) updateScreenCluster(update *models.Update) error {
 		TickerBoxWidth:     int(update.ScreenCluster.TickerBoxWidth),
 		ScreenWidth:        t.cfg.ScreenWidth,
 		ScreenHeight:       t.cfg.ScreenHeight,
+		ScrollSpeed:        int(update.ScreenCluster.ScrollSpeed),
 	}
 
 	logrus.WithFields(logrus.Fields{

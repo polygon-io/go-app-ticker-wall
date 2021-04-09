@@ -36,6 +36,7 @@ type PresentationData struct {
 	ScreenIndex        int   // ScreenIndex is index of this screen in the sequence of displays. ( left to right ) ( starting at 1 ).
 	NumberOfScreens    int   // NumberOfScreens is the total number of screens in this ticker wall cluster.
 	GlobalViewportSize int64 // GlobalViewportSize is the total size of all screens combined ( px ).
+	ScrollSpeed        int   // ScrollSpeed is the speed which the ticker scrolls across the screen. Default 10.
 }
 
 // DefaultManager is used to manage all tickers for an application. It knows important information for rendering.

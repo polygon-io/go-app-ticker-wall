@@ -14,11 +14,11 @@ import (
 type TickerWallLeader struct {
 	sync.RWMutex
 
-	// Our view of the entire screen cluster.
-	Screens []*models.Screen
-
 	// config
 	cfg *ServiceConfig
+
+	// This keeps the settings
+	clusterConfig *models.ScreenCluster
 
 	// Our list of tickers we want to display / keep updated.
 	Tickers []*models.Ticker
@@ -42,6 +42,10 @@ func NewTickerWallLeader(cfg *ServiceConfig) *TickerWallLeader {
 	return &TickerWallLeader{
 		cfg:          cfg,
 		tickerUpdate: make(chan []byte, 1000), // Buffered channel to account for bursts.
+		clusterConfig: &models.ScreenCluster{
+			TickerBoxWidth: int32(cfg.TickerBoxWidthPx),
+			ScrollSpeed:    int32(cfg.ScrollSpeed),
+		},
 	}
 }
 
@@ -76,6 +80,10 @@ func (t *TickerWallLeader) Run(ctx context.Context) error {
 
 	tomb.Go(func() error {
 		return t.queueTickerUpdates(ctx)
+	})
+
+	tomb.Go(func() error {
+		return t.runHTTPServer(ctx)
 	})
 
 	// Watch for updates to tickers, one to many fanout for all clients.

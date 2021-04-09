@@ -85,12 +85,15 @@ func (t *TickerWallLeader) queueScreenClientUpdate(screenClient *ScreenClient) e
 	t.RLock()
 	defer t.RUnlock()
 
-	cluster := &models.ScreenCluster{}
+	cluster := t.clusterConfig
+
+	// Reset some numbers.
 	cluster.NumberOfScreens = int32(len(t.ScreenClients))
+	cluster.Screens = nil
+	cluster.GlobalViewportSize = 0
+
 	for _, sc := range t.ScreenClients {
 		cluster.GlobalViewportSize += int64(sc.Screen.Width)
-		cluster.TickerBoxWidth = int32(t.cfg.TickerBoxWidthPx)
-		cluster.ScrollSpeed = int32(t.cfg.ScrollSpeed)
 		cluster.Screens = append(cluster.Screens, sc.Screen)
 	}
 
