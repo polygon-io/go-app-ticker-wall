@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 )
@@ -126,4 +128,108 @@ func makeHTTPRequest(ctx context.Context, url string) ([]byte, error) {
 	}
 
 	return io.ReadAll(resp.Body)
+}
+
+type polygonWrapper struct {
+	Messages []polygonWebsocketTrade `json:"e"`
+}
+
+type polygonWebsocketTrade struct {
+	Event  string  `json:"ev"`
+	ID     string  `json:"i"`
+	Price  float64 `json:"p"`
+	Ticker string  `json:"sym"`
+}
+
+func (t *TickerWallLeader) listenForTickerUpdates(ctx context.Context) error {
+	c, _, err := websocket.DefaultDialer.Dial("wss://socket.polygon.io/stocks", nil)
+	if err != nil {
+		return fmt.Errorf("unable to connect to websocket endpoint: %w", err)
+	}
+	defer c.Close()
+
+	if err := c.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"auth","params":"%s"}`, t.cfg.APIKey))); err != nil {
+		return fmt.Errorf("unable to send auth message to websockets: %w", err)
+	}
+
+	// Create channels param
+	var tickers []string
+	for _, t := range t.Tickers {
+		tickers = append(tickers, "T."+t.Ticker)
+	}
+
+	if err := c.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"subscribe","params":"%s"}`, strings.Join(tickers, ",")))); err != nil {
+		return fmt.Errorf("unable to send subscription message to websockets: %w", err)
+	}
+
+	// Close our update channel when we exit.
+	defer close(t.tickerUpdate)
+
+	// As little logic as possible in the reader loop:
+	for {
+		// Check if our context has ended.
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		// Read message from WS.
+		// TODO: This could block the application from exiting since we do not check context until
+		// the next pass after a message has come in. No messages = no ctx check = no exit.
+		_, messageBody, err := c.ReadMessage()
+		if err != nil {
+			return fmt.Errorf("websocket read error: %w", err)
+		}
+
+		// Send it to the parser.
+		t.tickerUpdate <- messageBody
+	}
+}
+
+func (t *TickerWallLeader) queueTickerUpdates(ctx context.Context) error {
+
+	appendBytes := []byte(`}`)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case msgBytes, ok := <-t.tickerUpdate:
+			if !ok {
+				return nil
+			}
+
+			wsMessage := &polygonWrapper{}
+
+			// holy shit this is hackey, we HAVE to fix this.
+			wsMessageWrapped := []byte(`{"e":`)
+			wsMessageWrapped = append(wsMessageWrapped, msgBytes...)
+			wsMessageWrapped = append(wsMessageWrapped, appendBytes...)
+
+			if err := json.Unmarshal(wsMessageWrapped, wsMessage); err != nil {
+				return fmt.Errorf("could not unmarshal json from server: %w", err)
+			}
+
+			for _, trade := range wsMessage.Messages {
+				// This is NOT a trade message.
+				if trade.Event != "T" {
+					continue
+				}
+
+				// Create our update message.
+				update := &models.Update{
+					UpdateType: models.UpdateTypeScreenTicker,
+					Ticker: &models.Ticker{
+						Ticker: trade.Ticker,
+						Price:  trade.Price,
+					},
+				}
+
+				// Tell all screen clients to update.
+				for _, sc := range t.ScreenClients {
+					sc.Updates <- update
+				}
+
+			}
+
+		}
+	}
 }

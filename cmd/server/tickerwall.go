@@ -25,6 +25,9 @@ type TickerWallLeader struct {
 
 	// Our list of client screens currently connected.
 	ScreenClients []*ScreenClient
+
+	// Used for internally passing messages between websockets and parser.
+	tickerUpdate chan []byte
 }
 
 type ScreenClient struct {
@@ -37,7 +40,8 @@ type ScreenClient struct {
 // NewTickerWallLeader creates a new ticker wall leader.
 func NewTickerWallLeader(cfg *ServiceConfig) *TickerWallLeader {
 	return &TickerWallLeader{
-		cfg: cfg,
+		cfg:          cfg,
+		tickerUpdate: make(chan []byte, 1000), // Buffered channel to account for bursts.
 	}
 }
 
@@ -65,6 +69,14 @@ func (t *TickerWallLeader) Run(ctx context.Context) error {
 
 	// Create new tomb for this process.
 	tomb, ctx := tombv2.WithContext(ctx)
+
+	tomb.Go(func() error {
+		return t.listenForTickerUpdates(ctx)
+	})
+
+	tomb.Go(func() error {
+		return t.queueTickerUpdates(ctx)
+	})
 
 	// Watch for updates to tickers, one to many fanout for all clients.
 	tomb.Go(func() error {

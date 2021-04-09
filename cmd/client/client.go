@@ -46,29 +46,63 @@ func (t *TickerWallClient) Run(ctx context.Context) error {
 	for {
 		// Read message.
 		update, err := updateListener.Recv()
-		if err == io.EOF {
-			return nil
+		if err != nil {
+			if err == io.EOF {
+				logrus.Info("No more messages from leader.")
+			}
+			logrus.WithError(err).Error("grpc client ending..")
+			return err
 		}
 
 		if update == nil {
 			logrus.Warning("Update message empty...")
+			continue
 		}
 
 		switch update.UpdateType {
 		case models.UpdateTypeScreenCluster:
 			t.updateScreenCluster(update)
 		case models.UpdateTypeScreenTicker:
-			// t.updateTicker(update)
+			t.updateTicker(update)
 		default:
 			logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
 		}
 	}
+}
 
-	return nil
+func (t *TickerWallClient) updateTicker(update *models.Update) error {
+	return t.manager.UpdateTicker(update.Ticker)
 }
 
 func (t *TickerWallClient) updateScreenCluster(update *models.Update) error {
-	logrus.Debug("Updating screen cluster information..")
+	logrus.Debug("Updating screen cluster information..", update.ScreenCluster.GlobalViewportSize)
+	var localizedOffset int64
+	for _, screen := range update.ScreenCluster.Screens {
+		// This is our index offset
+		if int(screen.Index) < t.cfg.ScreenIndex {
+			localizedOffset += int64(screen.Width)
+		}
+	}
+
+	// Configure new presentation settings.
+	presentationSettings := &tickerManager.PresentationData{
+		ScreenGlobalOffset: localizedOffset,
+		NumberOfScreens:    len(update.ScreenCluster.Screens),
+		GlobalViewportSize: update.ScreenCluster.GlobalViewportSize,
+		TickerBoxWidth:     int(update.ScreenCluster.TickerBoxWidth),
+		ScreenWidth:        t.cfg.ScreenWidth,
+		ScreenHeight:       t.cfg.ScreenHeight,
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"globalScreenOffset": presentationSettings.ScreenGlobalOffset,
+		"globalViewportSize": presentationSettings.GlobalViewportSize,
+		"screens":            presentationSettings.NumberOfScreens,
+	}).Debug("Presentation Data Updated")
+
+	// Update our presentation settings.
+	t.manager.SetPresentationData(presentationSettings)
+
 	return nil
 }
 

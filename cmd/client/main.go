@@ -32,7 +32,7 @@ type ServiceConfig struct {
 	// Local Presentation Settings:
 	ScreenWidth  int `split_words:"true" default:"1200"`
 	ScreenHeight int `split_words:"true" default:"300"`
-	ScreenIndex  int `split_words:"true" default:"2"`
+	ScreenIndex  int `split_words:"true" default:"10"`
 }
 
 func run() error {

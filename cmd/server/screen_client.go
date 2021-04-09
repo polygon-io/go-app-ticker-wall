@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/google/uuid"
@@ -33,9 +34,8 @@ func (t *TickerWallLeader) addScreenToCluster(screenClient *ScreenClient) error 
 	return nil
 }
 
-func (t *TickerWallLeader) removeScreenFromCluster(screen *ScreenClient) {
+func (t *TickerWallLeader) removeScreenFromCluster(screen *ScreenClient) error {
 	t.Lock()
-	defer t.Unlock()
 
 	// find index of screen..
 	screenIndex := -1
@@ -47,8 +47,8 @@ func (t *TickerWallLeader) removeScreenFromCluster(screen *ScreenClient) {
 
 	// We didn't find this client??
 	if screenIndex == -1 {
-		logrus.Warning("Unable to find screen when attempting to remove it... This should not happen.")
-		return
+		t.Unlock()
+		return errors.New("unable to find screen when attempting to remove it")
 	}
 
 	// Remove the element from the slice.
@@ -59,6 +59,8 @@ func (t *TickerWallLeader) removeScreenFromCluster(screen *ScreenClient) {
 	// Re-sort.
 	sort.Sort(ScreenClientSlice(t.ScreenClients))
 
+	t.Unlock()
+
 	// Close the clients updates channel.
 	close(screen.Updates)
 
@@ -66,6 +68,16 @@ func (t *TickerWallLeader) removeScreenFromCluster(screen *ScreenClient) {
 		"index": screen.Screen.Index,
 		"UUID":  screen.UUID,
 	}).Info("Screen removed from cluster.")
+
+	// Tell all screen clients to update.
+	for _, sc := range t.ScreenClients {
+		if err := t.queueScreenClientUpdate(sc); err != nil {
+			logrus.WithError(err).Error("Unable to send update to screen client.")
+			return err
+		}
+	}
+
+	return nil
 }
 
 // queueScreenClientUpdate sends an individual screen client the current screen cluster information.

@@ -23,7 +23,9 @@ func (t *TickerWallLeader) RegisterAndListenForUpdates(screen *models.Screen, st
 
 	// Remove this screen when we close the request.
 	defer func() {
-		t.removeScreenFromCluster(screenClient) // When we disconnect, remove from cluster.
+		if err := t.removeScreenFromCluster(screenClient); err != nil { // When we disconnect, remove from cluster.
+			logrus.WithError(err).Error("Couldn't remove screen..")
+		}
 	}()
 
 	for {

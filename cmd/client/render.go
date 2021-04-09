@@ -82,6 +82,9 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 }
 
 func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker *tickerManager.Ticker, globalOffset int64) {
+	ticker.RLock()
+	defer ticker.RUnlock()
+
 	ctx.SetFontFace("sans-bold")
 	ctx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	ctx.SetTextLineHeight(1.2)

@@ -84,7 +84,7 @@ func main() {
 }
 
 func startGRPC(ctx context.Context, cfg *ServiceConfig, tickerWallLeader models.TickerWallLeaderServer) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 6886))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 6886))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

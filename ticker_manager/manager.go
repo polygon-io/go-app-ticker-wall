@@ -14,14 +14,18 @@ type TickerManager interface {
 	// AddTicker adds a ticker symbol to this manager. It will be added at the correct index ( sorted alphabetically )
 	AddTicker(ticker string, price float64, priceChangePercentage float64, companyName string)
 
+	// UpdateTicker updates a ticker which already exists in our list. If it does not exist, nothing will happen.
+	UpdateTicker(*models.Ticker) error
+
 	// DetermineTickersForRender takes a global offset and returns the ticker indices which should be rendered.
 	DetermineTickersForRender(globalOffset int64) (tickers []*Ticker)
 
 	// TickerOffset determines what the offset should be for this ticker, on this screen.
 	TickerOffset(globalOffset int64, ticker *Ticker) int64
 
-	// GetPresentationData gets the presentation data.
+	// Presentation data getter / setter.
 	GetPresentationData() *PresentationData
+	SetPresentationData(*PresentationData)
 }
 
 type PresentationData struct {
@@ -55,7 +59,16 @@ func NewDefaultManager(presentationData *PresentationData) TickerManager {
 
 // GetPresentationData gets the presentation data.
 func (m *DefaultManager) GetPresentationData() *PresentationData {
+	m.RLock()
+	defer m.RUnlock()
 	return m.PresentationData
+}
+
+// SetPresentationData gets the presentation data.
+func (m *DefaultManager) SetPresentationData(presentationData *PresentationData) {
+	m.Lock()
+	defer m.Unlock()
+	m.PresentationData = presentationData
 }
 
 // TickerOffset determines what the offset should be for this ticker, on this screen.
@@ -117,6 +130,22 @@ func (m *DefaultManager) DetermineTickersForRender(globalOffset int64) []*Ticker
 	}
 
 	return tickers
+}
+
+// UpdateTicker updates a ticker which already exists in our list. If it does not exist, nothing will happen.
+func (m *DefaultManager) UpdateTicker(ticker *models.Ticker) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	for _, t := range m.Tickers {
+		if t.Ticker.Ticker == ticker.Ticker {
+			t.Lock()
+			t.Price = ticker.Price
+			t.Unlock()
+		}
+	}
+
+	return nil
 }
 
 // AddTicker creates a new ticker in this manager. Tickers should be unique by their ticker symbol.
