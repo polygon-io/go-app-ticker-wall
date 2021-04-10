@@ -75,7 +75,7 @@ func (t *TickerWallClient) updateTicker(update *models.Update) error {
 }
 
 func (t *TickerWallClient) updateScreenCluster(update *models.Update) error {
-	logrus.Debug("Updating screen cluster information..", update.ScreenCluster.GlobalViewportSize)
+	logrus.Debug("Updating screen cluster information..")
 	var localizedOffset int64
 	for _, screen := range update.ScreenCluster.Screens {
 		// This is our index offset
