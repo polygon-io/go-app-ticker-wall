@@ -74,6 +74,9 @@ func (m *DefaultManager) SetPresentationData(presentationData *PresentationData)
 
 // TickerOffset determines what the offset should be for this ticker, on this screen.
 func (m *DefaultManager) TickerOffset(globalOffset int64, ticker *Ticker) int64 {
+	m.RLock()
+	defer m.RUnlock()
+
 	localizedOffset := (globalOffset % int64(len(m.Tickers)*m.PresentationData.TickerBoxWidth))
 
 	offset := (int64(int(ticker.Index)*m.PresentationData.TickerBoxWidth) - localizedOffset) - int64(m.PresentationData.ScreenGlobalOffset)
@@ -88,6 +91,9 @@ func (m *DefaultManager) TickerOffset(globalOffset int64, ticker *Ticker) int64 
 
 // DetermineTickersForRender takes a global offset and returns the ticker indices which should be rendered.
 func (m *DefaultManager) DetermineTickersForRender(globalOffset int64) []*Ticker {
+	m.RLock()
+	defer m.RUnlock()
+
 	var tickers []*Ticker
 
 	// Global offset does not necessarily ever reset, so we need to get the localized offset.
@@ -139,11 +145,11 @@ func (m *DefaultManager) UpdateTicker(ticker *models.Ticker) error {
 	defer m.RUnlock()
 
 	for _, t := range m.Tickers {
+		t.Lock()
 		if t.Ticker.Ticker == ticker.Ticker {
-			t.Lock()
 			t.Price = ticker.Price
-			t.Unlock()
 		}
+		t.Unlock()
 	}
 
 	return nil

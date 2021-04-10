@@ -20,12 +20,12 @@ var cfg ServiceConfig
 
 type ServiceConfig struct {
 	// Service details
-	LogLevel   string `split_words:"true" default:"DEBUG"`
-	GRPCPort   string `split_words:"true" default:":6886"`
-	HTTPPort   string `split_words:"true" default:":6887"`
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
-	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,MSFT,NFLX,LPL,AMZN,SNAP,GME"`
-	APIKey string `split_words:"true" required:"true"` // polygon.io API key.
+	LogLevel string `split_words:"true" default:"DEBUG"`
+	GRPCPort string `split_words:"true" default:":6886"`
+	HTTPPort string `split_words:"true" default:":6887"`
+	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
+	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,MSFT,NFLX,LPL,AMZN,SNAP,GME,GE,GOOG,INTL,IBM"`
+	APIKey     string `split_words:"true" required:"true"` // polygon.io API key.
 
 	// Presentation Settings
 	TickerBoxWidthPx  int `split_words:"true" default:"1000"`

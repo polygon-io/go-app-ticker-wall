@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/goxjs/gl"
@@ -30,7 +31,7 @@ type ServiceConfig struct {
 	Leader   string `split_words:"true" default:"localhost:6886"`
 
 	// Local Presentation Settings:
-	ScreenWidth  int `split_words:"true" default:"1200"`
+	ScreenWidth  int `split_words:"true" default:"1280"`
 	ScreenHeight int `split_words:"true" default:"300"`
 	ScreenIndex  int `split_words:"true" default:"10"`
 }
@@ -58,7 +59,7 @@ func run() error {
 	}
 	defer glfw.Terminate()
 
-	window, err := glfw.CreateWindow(cfg.ScreenWidth, cfg.ScreenHeight, "Polygon Ticker Wall", nil, nil)
+	window, err := glfw.CreateWindow(cfg.ScreenWidth, cfg.ScreenHeight, fmt.Sprintf("Polygon Ticker Wall %d", cfg.ScreenIndex), nil, nil)
 	if err != nil {
 		return err
 	}
