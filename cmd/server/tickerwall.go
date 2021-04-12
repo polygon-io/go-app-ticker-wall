@@ -86,12 +86,5 @@ func (t *TickerWallLeader) Run(ctx context.Context) error {
 		return t.runHTTPServer(ctx)
 	})
 
-	// Watch for updates to tickers, one to many fanout for all clients.
-	tomb.Go(func() error {
-		<-ctx.Done()
-
-		return nil
-	})
-
 	return tomb.Wait()
 }

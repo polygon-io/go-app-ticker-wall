@@ -134,6 +134,10 @@ type polygonWrapper struct {
 	Messages []polygonWebsocketTrade `json:"e"`
 }
 
+//easyjson:json
+type polygonWebsocketTrades []polygonWebsocketTrade
+
+//easyjson:json
 type polygonWebsocketTrade struct {
 	Event  string  `json:"ev"`
 	ID     string  `json:"i"`
@@ -172,9 +176,13 @@ func (t *TickerWallLeader) listenForTickerUpdates(ctx context.Context) error {
 			return ctx.Err()
 		}
 
+		// Set maximum time between message loops.
+		deadline := time.Now().Add(2 * time.Second)
+		if err := c.SetReadDeadline(deadline); err != nil {
+			return fmt.Errorf("not able to set read deadline on websocket stream: %w", err)
+		}
+
 		// Read message from WS.
-		// TODO: This could block the application from exiting since we do not check context until
-		// the next pass after a message has come in. No messages = no ctx check = no exit.
 		_, messageBody, err := c.ReadMessage()
 		if err != nil {
 			return fmt.Errorf("websocket read error: %w", err)
