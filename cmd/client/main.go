@@ -72,7 +72,7 @@ func run() error {
 		panic(err)
 	}
 
-	glfw.SwapInterval(0)
+	glfw.SwapInterval(1)
 	createFonts(nanoCtx)
 
 	// Ticker Manager. By default we believe we are the only one. Once we connect to leader we will get updated info.
@@ -116,6 +116,12 @@ func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *
 	pixelRatio := float32(fbWidth) / float32(winWidth)
 	gl.Viewport(0, 0, fbWidth, fbHeight)
 
+	gl.ClearColor(0, 0, 0, 0)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	gl.Enable(gl.BLEND)
+	gl.Disable(gl.CULL_FACE)
+	gl.Disable(gl.DEPTH_TEST)
+
 	nanoCtx.SetFontFace("sans")
 	nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	nanoCtx.SetTextLineHeight(1.2)
@@ -129,11 +135,9 @@ func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *
 	for !window.ShouldClose() {
 		fps.UpdateGraph()
 		gl.ClearColor(0, 0, 0, 0)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
-		gl.Enable(gl.BLEND)
-		gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		gl.Enable(gl.CULL_FACE)
-		gl.Disable(gl.DEPTH_TEST)
+		// gl.Clear(gl.COLOR_BUFFER_BIT)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+
 		nanoCtx.BeginFrame(winWidth, winHeight, pixelRatio)
 		// nanoCtx.Save()
 

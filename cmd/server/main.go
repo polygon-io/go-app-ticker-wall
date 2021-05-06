@@ -24,7 +24,7 @@ type ServiceConfig struct {
 	GRPCPort string `split_words:"true" default:":6886"`
 	HTTPPort string `split_words:"true" default:":6887"`
 	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,MSFT,NFLX,LPL,AMZN,SNAP,GME,GE,GOOG,INTL,IBM"`
+	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,MSFT,NFLX,LPL,AMZN,SNAP,GME,GE,GOOG,INTC,IBM"`
 	APIKey     string `split_words:"true" required:"true"` // polygon.io API key.
 
 	// Presentation Settings
