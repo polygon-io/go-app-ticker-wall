@@ -47,6 +47,16 @@ type polygonLastTrade struct {
 	Results polygonTrade `json:"results"`
 }
 
+type polygonCompanyDetails struct {
+	polygonAPIResponse
+	Results polygonCompany `json:"results"`
+}
+
+type polygonCompany struct {
+	CompanyName       string `json:"name"`
+	OutstandingShares int64  `json:"outstanding_shares"`
+}
+
 func (t *TickerWallLeader) loadInitialTickerData(ctx context.Context, tickerSym string) (*models.Ticker, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
@@ -71,6 +81,13 @@ func (t *TickerWallLeader) loadInitialTickerData(ctx context.Context, tickerSym 
 	}
 	ticker.Price = currentPrice
 
+	// Get Company Info
+	companyInfo, err := GetCompanyDetails(ctx, t.cfg.APIKey, tickerSym)
+	if err != nil {
+		return nil, err
+	}
+	ticker.CompanyName = companyInfo.CompanyName
+
 	return ticker, nil
 }
 
@@ -87,6 +104,21 @@ func GetTickerCurrentPrice(ctx context.Context, apiKey, ticker string) (float64,
 	}
 
 	return res.Results.Price, nil
+}
+
+func GetCompanyDetails(ctx context.Context, apiKey, ticker string) (*polygonCompany, error) {
+	url := "https://api.polygon.io/vX/reference/tickers/" + ticker + "?apiKey=" + apiKey
+	body, err := makeHTTPRequest(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &polygonCompanyDetails{}
+	if err := json.Unmarshal(body, res); err != nil {
+		return nil, fmt.Errorf("unable to parse JSON response from polygon: %w", err)
+	}
+
+	return &res.Results, nil
 }
 
 func GetTickerYesterdaysClose(ctx context.Context, apiKey, ticker string) (float64, error) {

@@ -115,7 +115,7 @@ func (t *TickerWallClient) LoadTickers(ctx context.Context) error {
 
 	// Add our tickers to the manager.
 	for _, ticker := range tickers.Tickers {
-		t.manager.AddTicker(ticker.Ticker, ticker.Price, (1 - (ticker.Price / ticker.PreviousClosePrice)), ticker.Ticker)
+		t.manager.AddTicker(ticker.Ticker, ticker.Price, (1 - (ticker.Price / ticker.PreviousClosePrice)), ticker.CompanyName)
 	}
 
 	return nil
