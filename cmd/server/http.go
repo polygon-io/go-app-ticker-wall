@@ -45,8 +45,8 @@ func (t *TickerWallLeader) createAnnouncement(c *gin.Context) {
 		return
 	}
 
-	// Set the display time of the announcement to +1 second from now.
-	startTimer := time.Now().Add(1 * time.Second)
+	// Set the display time of the announcement to +100 ms from now.
+	startTimer := time.Now().Add(100 * time.Millisecond)
 	announcement.ShowAtTimestamp = startTimer.UnixNano() / int64(time.Millisecond)
 
 	// Tell all screen clients to update.

@@ -145,9 +145,7 @@ func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient
 			renderSpecialMessage(nanoCtx,
 				mgr,
 				t,
-				tickerWallClient.announcement.Message,
-				int(tickerWallClient.announcement.ShowAtTimestamp),
-				int(tickerWallClient.announcement.LifespanMS),
+				tickerWallClient.announcement,
 			)
 		}
 

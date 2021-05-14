@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fogleman/ease"
+	"github.com/polygon-io/go-app-ticker-wall/models"
 	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
 	"github.com/polygon-io/nanovgo"
 )
@@ -16,11 +17,11 @@ func renderTickers(ctx *nanovgo.Context, mgr tickerManager.TickerManager, global
 	}
 }
 
-func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager, globalOffset int64, message string, activationTime int, visibleLifetimeMS int) {
+func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager, globalOffset int64, announcement *models.Announcement) {
 	t := int(time.Now().UnixNano() / int64(time.Millisecond))
 
 	// We are outside of this messages lifespan.
-	if t < activationTime || t > (activationTime+visibleLifetimeMS+AnimationDuration) {
+	if t < int(announcement.ShowAtTimestamp) || t > (int(announcement.ShowAtTimestamp)+int(announcement.LifespanMS)+AnimationDuration) {
 		return
 	}
 
@@ -37,8 +38,8 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 	bgBottom := bgBottomEnd
 	bgTop := (bgBottom - float64(screenHeight))
 
-	if t-activationTime < AnimationDuration { // Enter animation is in progress.
-		diff := t - activationTime
+	if t-int(announcement.ShowAtTimestamp) < AnimationDuration { // Enter animation is in progress.
+		diff := t - int(announcement.ShowAtTimestamp)
 		percentageCompleted := float64(diff) / float64(AnimationDuration)
 
 		// bg calcs
@@ -48,8 +49,8 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 		// text calcs
 		textTop = textTopStart - ((textTopStart - textTopEnd) * ease.OutElastic(percentageCompleted))
 
-	} else if t > activationTime+visibleLifetimeMS { // Exit animation in progress.
-		diff := t - (activationTime + visibleLifetimeMS)
+	} else if t > int(announcement.ShowAtTimestamp+announcement.LifespanMS) { // Exit animation in progress.
+		diff := t - int(announcement.ShowAtTimestamp+announcement.LifespanMS)
 		percentageCompleted := float64(diff) / float64(AnimationDuration)
 
 		// bg calcs
@@ -68,7 +69,16 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 	left := -float32(mgr.GetPresentationData().ScreenGlobalOffset)
 	// Position bg.
 	ctx.RoundedRect(left, float32(bgTop), float32(mgr.GetPresentationData().GlobalViewportSize), float32(bgBottom), 0)
-	ctx.SetFillColor(nanovgo.RGBA(122, 255, 122, 222))
+
+	// Determine background color based on announcement type:].
+	if announcement.AnnouncementType == "danger" {
+		ctx.SetFillColor(nanovgo.RGBA(255, 122, 122, 222))
+	} else if announcement.AnnouncementType == "success" {
+		ctx.SetFillColor(nanovgo.RGBA(122, 255, 122, 222))
+	} else {
+		ctx.SetFillColor(nanovgo.RGBA(122, 122, 255, 222))
+	}
+
 	ctx.Fill()
 
 	ctx.SetFontSize(96.0)
@@ -78,7 +88,7 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 	// ctx.SetFontBlur(0)
 	ctx.SetFillColor(nanovgo.RGBA(255, 255, 255, 255))
 	middle := (float32(mgr.GetPresentationData().GlobalViewportSize) / 2) - float32(mgr.GetPresentationData().ScreenGlobalOffset)
-	ctx.Text(middle, float32(textTop), message)
+	ctx.Text(middle, float32(textTop), announcement.Message)
 }
 
 func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker *tickerManager.Ticker, globalOffset int64) {
