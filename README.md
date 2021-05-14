@@ -22,4 +22,14 @@ POST /v1/presentation
 }
 ```
 
+To display an announcement
+
+```
+POST /v1/announcement
+{
+    "message": "Anonymous message...",
+    "lifespanms": 5000
+}
+```
+
 This will slow down the scroll speed, and increase the width of each ticker symbol.
