@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/polygon-io/go-app-ticker-wall/models"
 )
 
 /* Layout:
@@ -30,14 +32,14 @@ func TestSimpleFirstScreen(t *testing.T) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	a.Len(tickers, 3)
 
-	a.Equal("1", tickers[0].Ticker)
-	a.Equal(-200, mgr.TickerOffset(globalOffset, tickers[0]))
+	a.Equal("1", tickers[0].Ticker.Ticker)
+	a.EqualValues(-200, mgr.TickerOffset(globalOffset, tickers[0]))
 
-	a.Equal("2", tickers[1].Ticker)
-	a.Equal(300, mgr.TickerOffset(globalOffset, tickers[1]))
+	a.Equal("2", tickers[1].Ticker.Ticker)
+	a.EqualValues(300, mgr.TickerOffset(globalOffset, tickers[1]))
 
-	a.Equal("3", tickers[2].Ticker)
-	a.Equal(800, mgr.TickerOffset(globalOffset, tickers[2]))
+	a.Equal("3", tickers[2].Ticker.Ticker)
+	a.EqualValues(800, mgr.TickerOffset(globalOffset, tickers[2]))
 }
 
 /* Layout:
@@ -64,14 +66,14 @@ func TestSimpleFirstScreen2(t *testing.T) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	a.Len(tickers, 3)
 
-	a.Equal("2", tickers[0].Ticker)
-	a.Equal(0, mgr.TickerOffset(globalOffset, tickers[0]))
+	a.Equal("2", tickers[0].Ticker.Ticker)
+	a.EqualValues(0, mgr.TickerOffset(globalOffset, tickers[0]))
 
-	a.Equal("3", tickers[1].Ticker)
-	a.Equal(500, mgr.TickerOffset(globalOffset, tickers[1]))
+	a.Equal("3", tickers[1].Ticker.Ticker)
+	a.EqualValues(500, mgr.TickerOffset(globalOffset, tickers[1]))
 
-	a.Equal("4", tickers[2].Ticker)
-	a.Equal(1000, mgr.TickerOffset(globalOffset, tickers[2]))
+	a.Equal("4", tickers[2].Ticker.Ticker)
+	a.EqualValues(1000, mgr.TickerOffset(globalOffset, tickers[2]))
 }
 
 /* Layout:
@@ -98,14 +100,14 @@ func TestSimpleFirstScreenWrappingForward(t *testing.T) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	a.Len(tickers, 3)
 
-	a.Equal("3", tickers[0].Ticker)
-	a.Equal(-200, mgr.TickerOffset(globalOffset, tickers[0]))
+	a.Equal("3", tickers[0].Ticker.Ticker)
+	a.EqualValues(-200, mgr.TickerOffset(globalOffset, tickers[0]))
 
-	a.Equal("4", tickers[1].Ticker)
-	a.Equal(300, mgr.TickerOffset(globalOffset, tickers[1]))
+	a.Equal("4", tickers[1].Ticker.Ticker)
+	a.EqualValues(300, mgr.TickerOffset(globalOffset, tickers[1]))
 
-	a.Equal("1", tickers[2].Ticker)
-	a.Equal(800, mgr.TickerOffset(globalOffset, tickers[2]))
+	a.Equal("1", tickers[2].Ticker.Ticker)
+	a.EqualValues(800, mgr.TickerOffset(globalOffset, tickers[2]))
 }
 
 /* Layout:
@@ -132,14 +134,14 @@ func TestSimpleFirstScreenWrappingForward2(t *testing.T) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	a.Len(tickers, 3)
 
-	a.Equal("4", tickers[0].Ticker)
-	a.Equal(-400, mgr.TickerOffset(globalOffset, tickers[0]))
+	a.Equal("4", tickers[0].Ticker.Ticker)
+	a.EqualValues(-400, mgr.TickerOffset(globalOffset, tickers[0]))
 
-	a.Equal("1", tickers[1].Ticker)
-	a.Equal(100, mgr.TickerOffset(globalOffset, tickers[1]))
+	a.Equal("1", tickers[1].Ticker.Ticker)
+	a.EqualValues(100, mgr.TickerOffset(globalOffset, tickers[1]))
 
-	a.Equal("2", tickers[2].Ticker)
-	a.Equal(600, mgr.TickerOffset(globalOffset, tickers[2]))
+	a.Equal("2", tickers[2].Ticker.Ticker)
+	a.EqualValues(600, mgr.TickerOffset(globalOffset, tickers[2]))
 }
 
 /* Layout:
@@ -166,20 +168,20 @@ func TestSecondScreenWrappingBackward(t *testing.T) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	a.Len(tickers, 3)
 
-	a.Equal("3", tickers[0].Ticker)
-	a.Equal(-200, mgr.TickerOffset(globalOffset, tickers[0]))
+	a.Equal("3", tickers[0].Ticker.Ticker)
+	a.EqualValues(-200, mgr.TickerOffset(globalOffset, tickers[0]))
 
-	a.Equal("4", tickers[1].Ticker)
-	a.Equal(300, mgr.TickerOffset(globalOffset, tickers[1]))
+	a.Equal("4", tickers[1].Ticker.Ticker)
+	a.EqualValues(300, mgr.TickerOffset(globalOffset, tickers[1]))
 
-	a.Equal("1", tickers[2].Ticker)
-	a.Equal(800, mgr.TickerOffset(globalOffset, tickers[2]))
+	a.Equal("1", tickers[2].Ticker.Ticker)
+	a.EqualValues(800, mgr.TickerOffset(globalOffset, tickers[2]))
 }
 
 func AddTickersToManager(mgr TickerManager) {
 	// Create some tickers.
-	mgr.AddTicker("1", 1.00, 1.00, "1 Inc")
-	mgr.AddTicker("2", 2.00, 2.00, "2 Inc")
-	mgr.AddTicker("3", 3.00, 3.00, "3 Inc")
-	mgr.AddTicker("4", 4.00, 4.00, "4 Inc")
+	mgr.AddTicker(models.Ticker{Ticker: "1", Price: 1.00, PriceChangePercentage: 1.00, CompanyName: "1 Inc"})
+	mgr.AddTicker(models.Ticker{Ticker: "2", Price: 2.00, PriceChangePercentage: 2.00, CompanyName: "2 Inc"})
+	mgr.AddTicker(models.Ticker{Ticker: "3", Price: 3.00, PriceChangePercentage: 3.00, CompanyName: "3 Inc"})
+	mgr.AddTicker(models.Ticker{Ticker: "4", Price: 4.00, PriceChangePercentage: 4.00, CompanyName: "4 Inc"})
 }
