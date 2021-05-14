@@ -99,9 +99,12 @@ func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker 
 
 	tickerOffset := mgr.TickerOffset(globalOffset, ticker)
 
-	ctx.TextBox(float32(tickerOffset), 40, 900, ticker.Ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
+	ctx.TextBox(float32(tickerOffset), 30, 900, ticker.Ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
 	ctx.SetFontSize(56)
 	ctx.SetFontFace("sans-light")
-	ctx.TextBox(float32(tickerOffset), 180, 900, ticker.CompanyName)
+	ctx.TextBox(float32(tickerOffset), 170, 900, ticker.CompanyName)
 
+	diff := ticker.PreviousClosePrice - ticker.Price
+	ctx.SetFontSize(48)
+	ctx.TextBox(float32(tickerOffset), 220, 900, fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage))
 }

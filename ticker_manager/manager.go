@@ -12,7 +12,7 @@ import (
 // TickerManager is the interface used for ticker managers.
 type TickerManager interface {
 	// AddTicker adds a ticker symbol to this manager. It will be added at the correct index ( sorted alphabetically )
-	AddTicker(ticker string, price float64, priceChangePercentage float64, companyName string)
+	AddTicker(ticker models.Ticker)
 
 	// UpdateTicker updates a ticker which already exists in our list. If it does not exist, nothing will happen.
 	UpdateTicker(*models.Ticker) error
@@ -156,20 +156,12 @@ func (m *DefaultManager) UpdateTicker(ticker *models.Ticker) error {
 }
 
 // AddTicker creates a new ticker in this manager. Tickers should be unique by their ticker symbol.
-func (m *DefaultManager) AddTicker(ticker string, price float64, priceChangePercentage float64, companyName string) {
+func (m *DefaultManager) AddTicker(ticker models.Ticker) {
 	m.Lock()
 	defer m.Unlock()
 
 	// Create a new ticker.
-	tickerObj := &Ticker{
-		sync.RWMutex{},
-		models.Ticker{
-			Ticker:                ticker,
-			Price:                 price,
-			PriceChangePercentage: priceChangePercentage,
-			CompanyName:           companyName,
-		},
-	}
+	tickerObj := &Ticker{Ticker: ticker}
 
 	// Add ticker to our list.
 	m.Tickers = append(m.Tickers, tickerObj)
