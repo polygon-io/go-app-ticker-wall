@@ -99,7 +99,7 @@ func (t *TickerWallLeader) queueScreenClientUpdate(screenClient *ScreenClient) e
 
 	// Create the update container msg.
 	update := &models.Update{
-		UpdateType:    models.UpdateTypeScreenCluster,
+		UpdateType:    models.UpdateTypeCluster,
 		ScreenCluster: cluster,
 	}
 

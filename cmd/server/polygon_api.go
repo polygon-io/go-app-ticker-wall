@@ -209,10 +209,10 @@ func (t *TickerWallLeader) listenForTickerUpdates(ctx context.Context) error {
 		}
 
 		// Set maximum time between message loops.
-		deadline := time.Now().Add(2 * time.Second)
-		if err := c.SetReadDeadline(deadline); err != nil {
-			return fmt.Errorf("not able to set read deadline on websocket stream: %w", err)
-		}
+		// deadline := time.Now().Add(2 * time.Second)
+		// if err := c.SetReadDeadline(deadline); err != nil {
+		// 	return fmt.Errorf("not able to set read deadline on websocket stream: %w", err)
+		// }
 
 		// Read message from WS.
 		_, messageBody, err := c.ReadMessage()
@@ -256,7 +256,7 @@ func (t *TickerWallLeader) queueTickerUpdates(ctx context.Context) error {
 
 				// Create our update message.
 				update := &models.Update{
-					UpdateType: models.UpdateTypeScreenTicker,
+					UpdateType: models.UpdateTypeTicker,
 					Ticker: &models.Ticker{
 						Ticker: trade.Ticker,
 						Price:  trade.Price,

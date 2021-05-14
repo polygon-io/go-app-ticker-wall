@@ -18,7 +18,8 @@ type TickerWallClient struct {
 	client models.TickerWallLeaderClient
 	screen *models.Screen
 
-	manager tickerManager.TickerManager
+	manager      tickerManager.TickerManager
+	announcement *models.Announcement
 }
 
 // NewTickerWallClient creates a new ticker wall client.
@@ -60,10 +61,12 @@ func (t *TickerWallClient) Run(ctx context.Context) error {
 		}
 
 		switch update.UpdateType {
-		case models.UpdateTypeScreenCluster:
+		case models.UpdateTypeCluster:
 			t.updateScreenCluster(update)
-		case models.UpdateTypeScreenTicker:
+		case models.UpdateTypeTicker:
 			t.updateTicker(update)
+		case models.UpdateTypeAnnouncement:
+			t.updateAnnouncement(update)
 		default:
 			logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
 		}
@@ -72,6 +75,12 @@ func (t *TickerWallClient) Run(ctx context.Context) error {
 
 func (t *TickerWallClient) updateTicker(update *models.Update) error {
 	return t.manager.UpdateTicker(update.Ticker)
+}
+
+func (t *TickerWallClient) updateAnnouncement(update *models.Update) error {
+	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
+	t.announcement = update.Accouncement
+	return nil
 }
 
 func (t *TickerWallClient) updateScreenCluster(update *models.Update) error {
@@ -115,7 +124,7 @@ func (t *TickerWallClient) LoadTickers(ctx context.Context) error {
 
 	// Add our tickers to the manager.
 	for _, ticker := range tickers.Tickers {
-		t.manager.AddTicker(ticker.Ticker, ticker.Price, (1 - (ticker.Price / ticker.PreviousClosePrice)), ticker.CompanyName)
+		t.manager.AddTicker(ticker.Ticker, ticker.Price, (1 - (ticker.PreviousClosePrice / ticker.Price)), ticker.CompanyName)
 	}
 
 	return nil

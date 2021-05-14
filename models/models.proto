@@ -23,6 +23,14 @@ message Tickers {
     repeated Ticker Tickers = 1;
 }
 
+// Announcement
+message Announcement {
+    string Message = 1;
+    string AnnouncementType = 2;
+    int64 ShowAtTimestamp = 3;
+    int64 LifespanMS = 4;
+}
+
 // Update is a generalized container for all update types.
 message Update {
     // Defines which type of update this is.
@@ -33,6 +41,9 @@ message Update {
 
     // Ticker Update Information.
     Ticker Ticker = 3;
+
+    // Announcement Information.
+    Announcement Accouncement = 4;
 }
 
 // Screen contains all screen information about an individual screen.
