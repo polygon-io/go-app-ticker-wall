@@ -4,7 +4,8 @@ package models
 type UpdateType int32
 
 const (
-	UpdateTypeUnknown       = -1
-	UpdateTypeScreenCluster = 1
-	UpdateTypeScreenTicker  = 2
+	UpdateTypeUnknown      = -1
+	UpdateTypeCluster      = 1
+	UpdateTypeTicker       = 2
+	UpdateTypeAnnouncement = 3
 )

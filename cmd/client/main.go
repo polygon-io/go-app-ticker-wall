@@ -106,10 +106,10 @@ func run() error {
 		return tickerWallClient.Run(ctx)
 	})
 
-	return createRenderingLoop(ctx, nanoCtx, window, mgr)
+	return createRenderingLoop(ctx, tickerWallClient, nanoCtx, window, mgr)
 }
 
-func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *glfw.Window, mgr tickerManager.TickerManager) error {
+func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient, nanoCtx *nanovgo.Context, window *glfw.Window, mgr tickerManager.TickerManager) error {
 	fps := perfgraph.NewPerfGraph("Frame Time", "sans")
 	fbWidth, fbHeight := window.GetFramebufferSize()
 	winWidth, winHeight := window.GetSize()
@@ -126,12 +126,6 @@ func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *
 	nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	nanoCtx.SetTextLineHeight(1.2)
 
-	specialMessage := true
-	startTimer := time.Now().Add(1 * time.Minute)
-	startTimer = startTimer.Truncate(time.Minute)
-	specialMessageTimeActivate := startTimer.UnixNano() / int64(time.Millisecond)
-	logrus.Info("activation time: ", specialMessageTimeActivate)
-
 	for !window.ShouldClose() {
 		fps.UpdateGraph()
 		gl.ClearColor(0, 0, 0, 0)
@@ -142,12 +136,17 @@ func createRenderingLoop(ctx context.Context, nanoCtx *nanovgo.Context, window *
 		// nanoCtx.Save()
 
 		t := time.Now().UnixNano() / int64(mgr.GetPresentationData().ScrollSpeed*int(time.Millisecond))
-		// println(t)
+
 		// Actual application drawing.
 		renderTickers(nanoCtx, mgr, t)
 
-		if specialMessage {
-			renderSpecialMessage(nanoCtx, mgr, t, "Very Important Special Message... Read it!", int(specialMessageTimeActivate), 5000)
+		// If we have an announcement, display it.
+		if tickerWallClient.announcement != nil {
+			renderSpecialMessage(nanoCtx,
+				mgr,
+				t,
+				tickerWallClient.announcement,
+			)
 		}
 
 		// nanoCtx.Restore()
