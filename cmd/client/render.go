@@ -40,21 +40,21 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 
 	// Determine which animation to use for the announcement.
 	// To see more: https://github.com/fogleman/ease
-	var transformationAnimationIn func(float64) float64
 	var transformationAnimationOut func(float64) float64
+	var transformationAnimationIn func(float64) float64
 	switch announcement.Animation {
 	case "bounce":
-		transformationAnimationIn = ease.InElastic // bounce looks weird on out, this seems more natural.
-		transformationAnimationOut = ease.OutBounce
+		transformationAnimationOut = ease.InElastic // bounce looks weird on out, this seems more natural.
+		transformationAnimationIn = ease.OutBounce
 	case "ease":
-		transformationAnimationIn = ease.InQuint
-		transformationAnimationOut = ease.OutQuint
+		transformationAnimationOut = ease.InQuint
+		transformationAnimationIn = ease.OutQuint
 	case "back":
-		transformationAnimationIn = ease.InBack
-		transformationAnimationOut = ease.OutBack
+		transformationAnimationOut = ease.InBack
+		transformationAnimationIn = ease.OutBack
 	default:
-		transformationAnimationIn = ease.InElastic
-		transformationAnimationOut = ease.OutElastic
+		transformationAnimationOut = ease.InElastic
+		transformationAnimationIn = ease.OutElastic
 	}
 
 	if t-int(announcement.ShowAtTimestamp) < AnimationDuration { // Enter animation is in progress.
@@ -62,22 +62,22 @@ func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager,
 		percentageCompleted := float64(diff) / float64(AnimationDuration)
 
 		// bg calcs
-		bgBottom = bgBottomStart - ((bgBottomStart - bgBottomEnd) * transformationAnimationOut(percentageCompleted))
+		bgBottom = bgBottomStart - ((bgBottomStart - bgBottomEnd) * transformationAnimationIn(percentageCompleted))
 		bgTop = (bgBottom - float64(screenHeight))
 
 		// text calcs
-		textTop = textTopStart - ((textTopStart - textTopEnd) * transformationAnimationOut(percentageCompleted))
+		textTop = textTopStart - ((textTopStart - textTopEnd) * transformationAnimationIn(percentageCompleted))
 
 	} else if t > int(announcement.ShowAtTimestamp+announcement.LifespanMS) { // Exit animation in progress.
 		diff := t - int(announcement.ShowAtTimestamp+announcement.LifespanMS)
 		percentageCompleted := float64(diff) / float64(AnimationDuration)
 
 		// bg calcs
-		bgBottom = bgBottomEnd - ((bgBottomEnd - bgBottomStart) * transformationAnimationIn(percentageCompleted))
+		bgBottom = bgBottomEnd - ((bgBottomEnd - bgBottomStart) * transformationAnimationOut(percentageCompleted))
 		bgTop = (bgBottom - float64(screenHeight))
 
 		// text calcs
-		textTop = textTopEnd - ((textTopEnd - textTopStart) * transformationAnimationIn(percentageCompleted))
+		textTop = textTopEnd - ((textTopEnd - textTopStart) * transformationAnimationOut(percentageCompleted))
 	}
 
 	ctx.Save()
