@@ -29,6 +29,7 @@ message Announcement {
     string AnnouncementType = 2;
     int64 ShowAtTimestamp = 3;
     int64 LifespanMS = 4;
+    string Animation = 5;
 }
 
 // Update is a generalized container for all update types.
