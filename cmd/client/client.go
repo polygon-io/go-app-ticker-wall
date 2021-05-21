@@ -163,7 +163,7 @@ func downloadLogo(ticker *models.Ticker) error {
 	}
 	defer file.Close()
 
-	// Use io.Copy to just dump the response body to the file. This supports huge files
+	// Use io.Copy to just dump the response body to the file.
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
 		return err
