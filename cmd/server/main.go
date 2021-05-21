@@ -24,11 +24,11 @@ type ServiceConfig struct {
 	GRPCPort string `split_words:"true" default:":6886"`
 	HTTPPort string `split_words:"true" default:":6887"`
 	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,MSFT,NFLX,LPL,AMZN,SNAP,GME,GE,GOOG,INTC,IBM"`
+	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,FB,NFLX,LPL,AMZN,SNAP,NKE,SBUX,SQ,INTC,IBM"`
 	APIKey     string `split_words:"true" required:"true"` // polygon.io API key.
 
 	// Presentation Settings
-	TickerBoxWidthPx  int `split_words:"true" default:"1000"`
+	TickerBoxWidthPx  int `split_words:"true" default:"1300"`
 	ScrollSpeed       int `split_words:"true" default:"16"`
 	AnimationDuration int `split_words:"true" default:"500"`
 }

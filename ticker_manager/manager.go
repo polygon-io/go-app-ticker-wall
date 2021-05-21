@@ -14,6 +14,9 @@ type TickerManager interface {
 	// AddTicker adds a ticker symbol to this manager. It will be added at the correct index ( sorted alphabetically )
 	AddTicker(ticker models.Ticker)
 
+	// AllTickers returns the entire list of tickers we currently manage.
+	AllTickers() []*Ticker
+
 	// UpdateTicker updates a ticker which already exists in our list. If it does not exist, nothing will happen.
 	UpdateTicker(*models.Ticker) error
 
@@ -153,6 +156,14 @@ func (m *DefaultManager) UpdateTicker(ticker *models.Ticker) error {
 	}
 
 	return nil
+}
+
+// AllTickers returns all the tickers we currently manage.
+func (m *DefaultManager) AllTickers() []*Ticker {
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.Tickers
 }
 
 // AddTicker creates a new ticker in this manager. Tickers should be unique by their ticker symbol.

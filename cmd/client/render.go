@@ -10,6 +10,12 @@ import (
 	"github.com/polygon-io/nanovgo"
 )
 
+// Some logo image constants.
+const (
+	logoSize              = 180
+	logoPaddingPercentage = 0.3
+)
+
 func renderTickers(ctx *nanovgo.Context, mgr tickerManager.TickerManager, globalOffset int64) {
 	tickers := mgr.DetermineTickersForRender(globalOffset)
 	for _, ticker := range tickers {
@@ -128,12 +134,19 @@ func renderTicker(ctx *nanovgo.Context, mgr tickerManager.TickerManager, ticker 
 
 	tickerOffset := mgr.TickerOffset(globalOffset, ticker)
 
-	ctx.TextBox(float32(tickerOffset), 30, 900, ticker.Ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
+	ctx.TextBox(float32(tickerOffset)+logoSize+(logoSize*logoPaddingPercentage), 30, 900, ticker.Ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
 	ctx.SetFontSize(56)
 	ctx.SetFontFace("sans-light")
-	ctx.TextBox(float32(tickerOffset), 170, 900, ticker.CompanyName)
+	ctx.TextBox(float32(tickerOffset)+logoSize+(logoSize*logoPaddingPercentage), 170, 900, ticker.CompanyName)
 
 	diff := ticker.PreviousClosePrice - ticker.Price
-	ctx.SetFontSize(48)
-	ctx.TextBox(float32(tickerOffset), 220, 900, fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage))
+	ctx.SetFontSize(32)
+	ctx.TextBox(float32(tickerOffset)+logoSize+(logoSize*logoPaddingPercentage), 220, 900, fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage))
+
+	// Paint the logo
+	imgPaint := nanovgo.ImagePattern(float32(tickerOffset), 63, logoSize, logoSize, 0.0/180.0*nanovgo.PI, int(ticker.Ticker.Img), 1)
+	ctx.BeginPath()
+	ctx.RoundedRect(float32(tickerOffset), 63, logoSize, logoSize, 5)
+	ctx.SetFillPaint(imgPaint)
+	ctx.Fill()
 }
