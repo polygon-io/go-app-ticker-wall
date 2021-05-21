@@ -116,7 +116,8 @@ func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient
 	pixelRatio := float32(fbWidth) / float32(winWidth)
 	gl.Viewport(0, 0, fbWidth, fbHeight)
 
-	gl.ClearColor(0, 0, 0, 0)
+	// Dark grey BG
+	gl.ClearColor(.1, .1, .1, 0)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.Enable(gl.BLEND)
 	gl.Disable(gl.CULL_FACE)
@@ -126,9 +127,15 @@ func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient
 	nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	nanoCtx.SetTextLineHeight(1.2)
 
+	// Load in the company images, and assign to each ticker.
+	for _, ticker := range mgr.AllTickers() {
+		img := nanoCtx.CreateImage("./logos/"+ticker.Ticker.Ticker+".png", 0)
+		ticker.Ticker.Img = int32(img)
+	}
+
 	for !window.ShouldClose() {
 		fps.UpdateGraph()
-		gl.ClearColor(0, 0, 0, 0)
+		gl.ClearColor(.1, .1, .1, 0)
 		// gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
 

@@ -18,6 +18,7 @@ message Ticker {
     double PriceChangePercentage = 4;
     double PreviousClosePrice = 5;
     int32 Index = 6;
+    int32 Img = 7;
 }
 message Tickers {
     repeated Ticker Tickers = 1;

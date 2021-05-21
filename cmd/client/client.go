@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
@@ -126,8 +130,46 @@ func (t *TickerWallClient) LoadTickers(ctx context.Context) error {
 	for _, ticker := range tickers.Tickers {
 		ticker.PriceChangePercentage = 1 - (ticker.Price / ticker.PreviousClosePrice)
 		t.manager.AddTicker(*ticker)
+
+		// ensure logos directory is created
+		if err := os.MkdirAll("./logos/", 0755); err != nil {
+			return fmt.Errorf("make output dir: %w", err)
+		}
+
+		// Download company logo
+		if err := downloadLogo(ticker); err != nil {
+			return err
+		}
 	}
 
+	return nil
+}
+
+// downloadLogo downloads the logo from our predictable S3 endpoint. This is deprecated,
+// so we will need to update this soon...
+func downloadLogo(ticker *models.Ticker) error {
+	logrus.Debug("Downloading logo for: ", ticker.Ticker)
+	url := "https://s3.polygon.io/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
+	response, e := http.Get(url)
+	if e != nil {
+		log.Fatal(e)
+	}
+	defer response.Body.Close()
+
+	// Write it to disk
+	file, err := os.Create("./logos/" + ticker.Ticker + ".png")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Use io.Copy to just dump the response body to the file. This supports huge files
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
+	}
+
+	logrus.Debug("Done downloading logo for: ", ticker.Ticker)
 	return nil
 }
 
