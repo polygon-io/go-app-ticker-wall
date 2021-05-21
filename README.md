@@ -27,8 +27,10 @@ To display an announcement
 ```
 POST /v1/announcement
 {
-    "message": "Anonymous message...",
-    "lifespanms": 5000
+    "message": "testing",
+    "lifespanMS": 5000, // How long the message stays visable ( ms ).
+    "announcementType":"info", // info|danger|success
+    "animation": "ease" // ease|bounce|back|elastic(Default)
 }
 ```
 

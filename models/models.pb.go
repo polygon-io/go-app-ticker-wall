@@ -157,6 +157,7 @@ type Announcement struct {
 	AnnouncementType     string   `protobuf:"bytes,2,opt,name=AnnouncementType,proto3" json:"AnnouncementType,omitempty"`
 	ShowAtTimestamp      int64    `protobuf:"varint,3,opt,name=ShowAtTimestamp,proto3" json:"ShowAtTimestamp,omitempty"`
 	LifespanMS           int64    `protobuf:"varint,4,opt,name=LifespanMS,proto3" json:"LifespanMS,omitempty"`
+	Animation            string   `protobuf:"bytes,5,opt,name=Animation,proto3" json:"Animation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -213,6 +214,13 @@ func (m *Announcement) GetLifespanMS() int64 {
 		return m.LifespanMS
 	}
 	return 0
+}
+
+func (m *Announcement) GetAnimation() string {
+	if m != nil {
+		return m.Animation
+	}
+	return ""
 }
 
 // Update is a generalized container for all update types.
