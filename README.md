@@ -35,3 +35,15 @@ POST /v1/announcement
 ```
 
 This will slow down the scroll speed, and increase the width of each ticker symbol.
+
+### TODO / Wish List
+
+These are not in order of priority.
+
+- CLI for interacting with cluster.
+- - Ability to add tickers while app is running.
+- - All the current REST endpoint interactions.
+- WebSocket reconnect logic ( we really need our go client library ).
+- gRPC reconnect logic to leader.
+- Potentially make charts instead of logos.
+- Run inside docker container.
