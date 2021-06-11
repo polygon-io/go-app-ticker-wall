@@ -47,3 +47,4 @@ These are not in order of priority.
 - gRPC reconnect logic to leader.
 - Potentially make charts instead of logos.
 - Run inside docker container.
+- Maybe v2.0? - Instead of 2 separate binaries, use raft to establish the leader. 1 binary.
