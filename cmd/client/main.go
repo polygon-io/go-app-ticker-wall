@@ -7,6 +7,7 @@ import (
 
 	"github.com/goxjs/gl"
 	"github.com/goxjs/glfw"
+	"github.com/polygon-io/go-app-ticker-wall/fonts"
 	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
 	"github.com/polygon-io/nanovgo"
 	"github.com/polygon-io/nanovgo/perfgraph"
@@ -65,7 +66,6 @@ func run() error {
 	}
 	window.MakeContextCurrent()
 
-	// ctx, err := nanovgo.NewContext(0)
 	nanoCtx, err := nanovgo.NewContext(0)
 	defer nanoCtx.Delete()
 	if err != nil {
@@ -73,7 +73,7 @@ func run() error {
 	}
 
 	glfw.SwapInterval(1)
-	createFonts(nanoCtx)
+	fonts.CreateFonts(nanoCtx)
 
 	// Ticker Manager. By default we believe we are the only one. Once we connect to leader we will get updated info.
 	mgr := tickerManager.NewDefaultManager(&tickerManager.PresentationData{
@@ -130,6 +130,7 @@ func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient
 	// Load in the company images, and assign to each ticker.
 	for _, ticker := range mgr.AllTickers() {
 		img := nanoCtx.CreateImage("./logos/"+ticker.Ticker.Ticker+".png", 0)
+		nanoCtx.CreateImageFromMemory()
 		ticker.Ticker.Img = int32(img)
 	}
 
@@ -166,12 +167,6 @@ func createRenderingLoop(ctx context.Context, tickerWallClient *TickerWallClient
 	}
 
 	return ctx.Err()
-}
-
-func createFonts(ctx *nanovgo.Context) {
-	ctx.CreateFont("sans", "fonts/Roboto-Regular.ttf")
-	ctx.CreateFont("sans-light", "fonts/Roboto-Light.ttf")
-	ctx.CreateFont("sans-bold", "fonts/Roboto-Bold.ttf")
 }
 
 func main() {

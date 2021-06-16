@@ -41,8 +41,8 @@ This will slow down the scroll speed, and increase the width of each ticker symb
 These are not in order of priority.
 
 - CLI for interacting with cluster.
-- - Ability to add tickers while app is running.
-- - All the current REST endpoint interactions.
+  - Ability to add tickers while app is running.
+  - All the current REST endpoint interactions.
 - WebSocket reconnect logic ( we really need our go client library ).
 - gRPC reconnect logic to leader.
 - Potentially make charts instead of logos.
@@ -50,3 +50,25 @@ These are not in order of priority.
 - Some kind of build process. tests?
 
 - Maybe v2.0? - Instead of 2 separate binaries, use raft to establish the leader. 1 binary.
+
+## Nodes
+
+### Data
+
+- Ticker Data
+  - Pricing Information
+  - Company Details
+- Presentation Data
+  - Local Presentation Data ( screen width, height, index )
+  - Cluster Presentation Data ( other screen details )
+    - Variables
+      - Background Color
+      - Up Color
+      - Down Color
+
+### Presentation
+
+- Rendering
+  - Global Ticker Tape
+  - Special Messages / Alerts
+  - Non OK state ( cannot connect to leader, etc )

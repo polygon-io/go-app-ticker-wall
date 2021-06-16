@@ -28,11 +28,13 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type Ticker struct {
 	Ticker                string   `protobuf:"bytes,1,opt,name=Ticker,proto3" json:"Ticker,omitempty"`
 	CompanyName           string   `protobuf:"bytes,2,opt,name=CompanyName,proto3" json:"CompanyName,omitempty"`
-	Price                 float64  `protobuf:"fixed64,3,opt,name=Price,proto3" json:"Price,omitempty"`
-	PriceChangePercentage float64  `protobuf:"fixed64,4,opt,name=PriceChangePercentage,proto3" json:"PriceChangePercentage,omitempty"`
-	PreviousClosePrice    float64  `protobuf:"fixed64,5,opt,name=PreviousClosePrice,proto3" json:"PreviousClosePrice,omitempty"`
-	Index                 int32    `protobuf:"varint,6,opt,name=Index,proto3" json:"Index,omitempty"`
-	Img                   int32    `protobuf:"varint,7,opt,name=Img,proto3" json:"Img,omitempty"`
+	OutstandingShares     int64    `protobuf:"varint,3,opt,name=OutstandingShares,proto3" json:"OutstandingShares,omitempty"`
+	Price                 float64  `protobuf:"fixed64,4,opt,name=Price,proto3" json:"Price,omitempty"`
+	PriceChangePercentage float64  `protobuf:"fixed64,5,opt,name=PriceChangePercentage,proto3" json:"PriceChangePercentage,omitempty"`
+	PreviousClosePrice    float64  `protobuf:"fixed64,6,opt,name=PreviousClosePrice,proto3" json:"PreviousClosePrice,omitempty"`
+	Index                 int32    `protobuf:"varint,7,opt,name=Index,proto3" json:"Index,omitempty"`
+	Img                   int32    `protobuf:"varint,8,opt,name=Img,proto3" json:"Img,omitempty"`
+	ImgData               []byte   `protobuf:"bytes,9,opt,name=ImgData,proto3" json:"ImgData,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
 	XXX_unrecognized      []byte   `json:"-"`
 	XXX_sizecache         int32    `json:"-"`
@@ -77,6 +79,13 @@ func (m *Ticker) GetCompanyName() string {
 	return ""
 }
 
+func (m *Ticker) GetOutstandingShares() int64 {
+	if m != nil {
+		return m.OutstandingShares
+	}
+	return 0
+}
+
 func (m *Ticker) GetPrice() float64 {
 	if m != nil {
 		return m.Price
@@ -112,52 +121,68 @@ func (m *Ticker) GetImg() int32 {
 	return 0
 }
 
-type Tickers struct {
-	Tickers              []*Ticker `protobuf:"bytes,1,rep,name=Tickers,proto3" json:"Tickers,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
-}
-
-func (m *Tickers) Reset()         { *m = Tickers{} }
-func (m *Tickers) String() string { return proto.CompactTextString(m) }
-func (*Tickers) ProtoMessage()    {}
-func (*Tickers) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b5431a010549573, []int{1}
-}
-
-func (m *Tickers) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Tickers.Unmarshal(m, b)
-}
-func (m *Tickers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Tickers.Marshal(b, m, deterministic)
-}
-func (m *Tickers) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Tickers.Merge(m, src)
-}
-func (m *Tickers) XXX_Size() int {
-	return xxx_messageInfo_Tickers.Size(m)
-}
-func (m *Tickers) XXX_DiscardUnknown() {
-	xxx_messageInfo_Tickers.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Tickers proto.InternalMessageInfo
-
-func (m *Tickers) GetTickers() []*Ticker {
+func (m *Ticker) GetImgData() []byte {
 	if m != nil {
-		return m.Tickers
+		return m.ImgData
 	}
 	return nil
 }
 
-// Announcement
+// PriceUpdate is the message sent when a price updates for a ticker.
+type PriceUpdate struct {
+	Ticker               string   `protobuf:"bytes,1,opt,name=Ticker,proto3" json:"Ticker,omitempty"`
+	Price                float64  `protobuf:"fixed64,2,opt,name=Price,proto3" json:"Price,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PriceUpdate) Reset()         { *m = PriceUpdate{} }
+func (m *PriceUpdate) String() string { return proto.CompactTextString(m) }
+func (*PriceUpdate) ProtoMessage()    {}
+func (*PriceUpdate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{1}
+}
+
+func (m *PriceUpdate) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PriceUpdate.Unmarshal(m, b)
+}
+func (m *PriceUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PriceUpdate.Marshal(b, m, deterministic)
+}
+func (m *PriceUpdate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PriceUpdate.Merge(m, src)
+}
+func (m *PriceUpdate) XXX_Size() int {
+	return xxx_messageInfo_PriceUpdate.Size(m)
+}
+func (m *PriceUpdate) XXX_DiscardUnknown() {
+	xxx_messageInfo_PriceUpdate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PriceUpdate proto.InternalMessageInfo
+
+func (m *PriceUpdate) GetTicker() string {
+	if m != nil {
+		return m.Ticker
+	}
+	return ""
+}
+
+func (m *PriceUpdate) GetPrice() float64 {
+	if m != nil {
+		return m.Price
+	}
+	return 0
+}
+
+// Announcement is used to display a special message on the display.
 type Announcement struct {
 	Message              string   `protobuf:"bytes,1,opt,name=Message,proto3" json:"Message,omitempty"`
-	AnnouncementType     string   `protobuf:"bytes,2,opt,name=AnnouncementType,proto3" json:"AnnouncementType,omitempty"`
-	ShowAtTimestamp      int64    `protobuf:"varint,3,opt,name=ShowAtTimestamp,proto3" json:"ShowAtTimestamp,omitempty"`
+	AnnouncementType     int32    `protobuf:"varint,2,opt,name=AnnouncementType,proto3" json:"AnnouncementType,omitempty"`
+	ShowAtTimestampMS    int64    `protobuf:"varint,3,opt,name=ShowAtTimestampMS,proto3" json:"ShowAtTimestampMS,omitempty"`
 	LifespanMS           int64    `protobuf:"varint,4,opt,name=LifespanMS,proto3" json:"LifespanMS,omitempty"`
-	Animation            string   `protobuf:"bytes,5,opt,name=Animation,proto3" json:"Animation,omitempty"`
+	Animation            int32    `protobuf:"varint,5,opt,name=Animation,proto3" json:"Animation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -195,16 +220,16 @@ func (m *Announcement) GetMessage() string {
 	return ""
 }
 
-func (m *Announcement) GetAnnouncementType() string {
+func (m *Announcement) GetAnnouncementType() int32 {
 	if m != nil {
 		return m.AnnouncementType
 	}
-	return ""
+	return 0
 }
 
-func (m *Announcement) GetShowAtTimestamp() int64 {
+func (m *Announcement) GetShowAtTimestampMS() int64 {
 	if m != nil {
-		return m.ShowAtTimestamp
+		return m.ShowAtTimestampMS
 	}
 	return 0
 }
@@ -216,33 +241,228 @@ func (m *Announcement) GetLifespanMS() int64 {
 	return 0
 }
 
-func (m *Announcement) GetAnimation() string {
+func (m *Announcement) GetAnimation() int32 {
 	if m != nil {
 		return m.Animation
+	}
+	return 0
+}
+
+// Screen contains all screen information about an individual screen.
+type Screen struct {
+	UUID                 string   `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	Width                int32    `protobuf:"varint,2,opt,name=Width,proto3" json:"Width,omitempty"`
+	Height               int32    `protobuf:"varint,3,opt,name=Height,proto3" json:"Height,omitempty"`
+	Index                int32    `protobuf:"varint,4,opt,name=Index,proto3" json:"Index,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Screen) Reset()         { *m = Screen{} }
+func (m *Screen) String() string { return proto.CompactTextString(m) }
+func (*Screen) ProtoMessage()    {}
+func (*Screen) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{3}
+}
+
+func (m *Screen) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Screen.Unmarshal(m, b)
+}
+func (m *Screen) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Screen.Marshal(b, m, deterministic)
+}
+func (m *Screen) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Screen.Merge(m, src)
+}
+func (m *Screen) XXX_Size() int {
+	return xxx_messageInfo_Screen.Size(m)
+}
+func (m *Screen) XXX_DiscardUnknown() {
+	xxx_messageInfo_Screen.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Screen proto.InternalMessageInfo
+
+func (m *Screen) GetUUID() string {
+	if m != nil {
+		return m.UUID
 	}
 	return ""
 }
 
-// Update is a generalized container for all update types.
+func (m *Screen) GetWidth() int32 {
+	if m != nil {
+		return m.Width
+	}
+	return 0
+}
+
+func (m *Screen) GetHeight() int32 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+func (m *Screen) GetIndex() int32 {
+	if m != nil {
+		return m.Index
+	}
+	return 0
+}
+
+// ScreenCluster contains information about the whole screen cluster.
+type ScreenCluster struct {
+	Settings             *PresentationSettings `protobuf:"bytes,1,opt,name=Settings,proto3" json:"Settings,omitempty"`
+	Screens              []*Screen             `protobuf:"bytes,2,rep,name=Screens,proto3" json:"Screens,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *ScreenCluster) Reset()         { *m = ScreenCluster{} }
+func (m *ScreenCluster) String() string { return proto.CompactTextString(m) }
+func (*ScreenCluster) ProtoMessage()    {}
+func (*ScreenCluster) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{4}
+}
+
+func (m *ScreenCluster) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ScreenCluster.Unmarshal(m, b)
+}
+func (m *ScreenCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ScreenCluster.Marshal(b, m, deterministic)
+}
+func (m *ScreenCluster) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScreenCluster.Merge(m, src)
+}
+func (m *ScreenCluster) XXX_Size() int {
+	return xxx_messageInfo_ScreenCluster.Size(m)
+}
+func (m *ScreenCluster) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScreenCluster.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScreenCluster proto.InternalMessageInfo
+
+func (m *ScreenCluster) GetSettings() *PresentationSettings {
+	if m != nil {
+		return m.Settings
+	}
+	return nil
+}
+
+func (m *ScreenCluster) GetScreens() []*Screen {
+	if m != nil {
+		return m.Screens
+	}
+	return nil
+}
+
+type PresentationSettings struct {
+	TickerBoxWidth       int32    `protobuf:"varint,1,opt,name=TickerBoxWidth,proto3" json:"TickerBoxWidth,omitempty"`
+	ScrollSpeed          int32    `protobuf:"varint,2,opt,name=ScrollSpeed,proto3" json:"ScrollSpeed,omitempty"`
+	UpColor              string   `protobuf:"bytes,3,opt,name=UpColor,proto3" json:"UpColor,omitempty"`
+	DownColor            string   `protobuf:"bytes,4,opt,name=DownColor,proto3" json:"DownColor,omitempty"`
+	BGColor              string   `protobuf:"bytes,5,opt,name=BGColor,proto3" json:"BGColor,omitempty"`
+	ShowLogos            bool     `protobuf:"varint,6,opt,name=ShowLogos,proto3" json:"ShowLogos,omitempty"`
+	AnimationDurationMS  int32    `protobuf:"varint,7,opt,name=AnimationDurationMS,proto3" json:"AnimationDurationMS,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PresentationSettings) Reset()         { *m = PresentationSettings{} }
+func (m *PresentationSettings) String() string { return proto.CompactTextString(m) }
+func (*PresentationSettings) ProtoMessage()    {}
+func (*PresentationSettings) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{5}
+}
+
+func (m *PresentationSettings) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PresentationSettings.Unmarshal(m, b)
+}
+func (m *PresentationSettings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PresentationSettings.Marshal(b, m, deterministic)
+}
+func (m *PresentationSettings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PresentationSettings.Merge(m, src)
+}
+func (m *PresentationSettings) XXX_Size() int {
+	return xxx_messageInfo_PresentationSettings.Size(m)
+}
+func (m *PresentationSettings) XXX_DiscardUnknown() {
+	xxx_messageInfo_PresentationSettings.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PresentationSettings proto.InternalMessageInfo
+
+func (m *PresentationSettings) GetTickerBoxWidth() int32 {
+	if m != nil {
+		return m.TickerBoxWidth
+	}
+	return 0
+}
+
+func (m *PresentationSettings) GetScrollSpeed() int32 {
+	if m != nil {
+		return m.ScrollSpeed
+	}
+	return 0
+}
+
+func (m *PresentationSettings) GetUpColor() string {
+	if m != nil {
+		return m.UpColor
+	}
+	return ""
+}
+
+func (m *PresentationSettings) GetDownColor() string {
+	if m != nil {
+		return m.DownColor
+	}
+	return ""
+}
+
+func (m *PresentationSettings) GetBGColor() string {
+	if m != nil {
+		return m.BGColor
+	}
+	return ""
+}
+
+func (m *PresentationSettings) GetShowLogos() bool {
+	if m != nil {
+		return m.ShowLogos
+	}
+	return false
+}
+
+func (m *PresentationSettings) GetAnimationDurationMS() int32 {
+	if m != nil {
+		return m.AnimationDurationMS
+	}
+	return 0
+}
+
+// Update encapsulates different update messages.
 type Update struct {
-	// Defines which type of update this is.
-	UpdateType int32 `protobuf:"varint,1,opt,name=UpdateType,proto3" json:"UpdateType,omitempty"`
-	// Screen Cluster Information.
-	ScreenCluster *ScreenCluster `protobuf:"bytes,2,opt,name=ScreenCluster,proto3" json:"ScreenCluster,omitempty"`
-	// Ticker Update Information.
-	Ticker *Ticker `protobuf:"bytes,3,opt,name=Ticker,proto3" json:"Ticker,omitempty"`
-	// Announcement Information.
-	Accouncement         *Announcement `protobuf:"bytes,4,opt,name=Accouncement,proto3" json:"Accouncement,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
+	UpdateType           int32          `protobuf:"varint,1,opt,name=UpdateType,proto3" json:"UpdateType,omitempty"`
+	PriceUpdate          *PriceUpdate   `protobuf:"bytes,2,opt,name=PriceUpdate,proto3" json:"PriceUpdate,omitempty"`
+	Announcement         *Announcement  `protobuf:"bytes,3,opt,name=Announcement,proto3" json:"Announcement,omitempty"`
+	ScreenCluster        *ScreenCluster `protobuf:"bytes,4,opt,name=ScreenCluster,proto3" json:"ScreenCluster,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
 func (m *Update) Reset()         { *m = Update{} }
 func (m *Update) String() string { return proto.CompactTextString(m) }
 func (*Update) ProtoMessage()    {}
 func (*Update) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b5431a010549573, []int{3}
+	return fileDescriptor_0b5431a010549573, []int{6}
 }
 
 func (m *Update) XXX_Unmarshal(b []byte) error {
@@ -270,6 +490,20 @@ func (m *Update) GetUpdateType() int32 {
 	return 0
 }
 
+func (m *Update) GetPriceUpdate() *PriceUpdate {
+	if m != nil {
+		return m.PriceUpdate
+	}
+	return nil
+}
+
+func (m *Update) GetAnnouncement() *Announcement {
+	if m != nil {
+		return m.Announcement
+	}
+	return nil
+}
+
 func (m *Update) GetScreenCluster() *ScreenCluster {
 	if m != nil {
 		return m.ScreenCluster
@@ -277,205 +511,137 @@ func (m *Update) GetScreenCluster() *ScreenCluster {
 	return nil
 }
 
-func (m *Update) GetTicker() *Ticker {
-	if m != nil {
-		return m.Ticker
-	}
-	return nil
-}
-
-func (m *Update) GetAccouncement() *Announcement {
-	if m != nil {
-		return m.Accouncement
-	}
-	return nil
-}
-
-// Screen contains all screen information about an individual screen.
-type Screen struct {
-	Width                int32    `protobuf:"varint,1,opt,name=Width,proto3" json:"Width,omitempty"`
-	Height               int32    `protobuf:"varint,2,opt,name=Height,proto3" json:"Height,omitempty"`
-	Index                int32    `protobuf:"varint,3,opt,name=Index,proto3" json:"Index,omitempty"`
-	ScreenGlobalOffset   int64    `protobuf:"varint,4,opt,name=ScreenGlobalOffset,proto3" json:"ScreenGlobalOffset,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Screen) Reset()         { *m = Screen{} }
-func (m *Screen) String() string { return proto.CompactTextString(m) }
-func (*Screen) ProtoMessage()    {}
-func (*Screen) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b5431a010549573, []int{4}
-}
-
-func (m *Screen) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Screen.Unmarshal(m, b)
-}
-func (m *Screen) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Screen.Marshal(b, m, deterministic)
-}
-func (m *Screen) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Screen.Merge(m, src)
-}
-func (m *Screen) XXX_Size() int {
-	return xxx_messageInfo_Screen.Size(m)
-}
-func (m *Screen) XXX_DiscardUnknown() {
-	xxx_messageInfo_Screen.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Screen proto.InternalMessageInfo
-
-func (m *Screen) GetWidth() int32 {
-	if m != nil {
-		return m.Width
-	}
-	return 0
-}
-
-func (m *Screen) GetHeight() int32 {
-	if m != nil {
-		return m.Height
-	}
-	return 0
-}
-
-func (m *Screen) GetIndex() int32 {
-	if m != nil {
-		return m.Index
-	}
-	return 0
-}
-
-func (m *Screen) GetScreenGlobalOffset() int64 {
-	if m != nil {
-		return m.ScreenGlobalOffset
-	}
-	return 0
-}
-
-// ScreenCluster contains information about the whole screen cluster.
-type ScreenCluster struct {
-	NumberOfScreens      int32     `protobuf:"varint,1,opt,name=NumberOfScreens,proto3" json:"NumberOfScreens,omitempty"`
-	TickerBoxWidth       int32     `protobuf:"varint,2,opt,name=TickerBoxWidth,proto3" json:"TickerBoxWidth,omitempty"`
-	GlobalViewportSize   int64     `protobuf:"varint,3,opt,name=GlobalViewportSize,proto3" json:"GlobalViewportSize,omitempty"`
-	ScrollSpeed          int32     `protobuf:"varint,4,opt,name=ScrollSpeed,proto3" json:"ScrollSpeed,omitempty"`
-	Screens              []*Screen `protobuf:"bytes,5,rep,name=Screens,proto3" json:"Screens,omitempty"`
+// Group of Tickers
+type Tickers struct {
+	Tickers              []*Ticker `protobuf:"bytes,1,rep,name=Tickers,proto3" json:"Tickers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *ScreenCluster) Reset()         { *m = ScreenCluster{} }
-func (m *ScreenCluster) String() string { return proto.CompactTextString(m) }
-func (*ScreenCluster) ProtoMessage()    {}
-func (*ScreenCluster) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0b5431a010549573, []int{5}
+func (m *Tickers) Reset()         { *m = Tickers{} }
+func (m *Tickers) String() string { return proto.CompactTextString(m) }
+func (*Tickers) ProtoMessage()    {}
+func (*Tickers) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{7}
 }
 
-func (m *ScreenCluster) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ScreenCluster.Unmarshal(m, b)
+func (m *Tickers) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Tickers.Unmarshal(m, b)
 }
-func (m *ScreenCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ScreenCluster.Marshal(b, m, deterministic)
+func (m *Tickers) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Tickers.Marshal(b, m, deterministic)
 }
-func (m *ScreenCluster) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScreenCluster.Merge(m, src)
+func (m *Tickers) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Tickers.Merge(m, src)
 }
-func (m *ScreenCluster) XXX_Size() int {
-	return xxx_messageInfo_ScreenCluster.Size(m)
+func (m *Tickers) XXX_Size() int {
+	return xxx_messageInfo_Tickers.Size(m)
 }
-func (m *ScreenCluster) XXX_DiscardUnknown() {
-	xxx_messageInfo_ScreenCluster.DiscardUnknown(m)
+func (m *Tickers) XXX_DiscardUnknown() {
+	xxx_messageInfo_Tickers.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ScreenCluster proto.InternalMessageInfo
+var xxx_messageInfo_Tickers proto.InternalMessageInfo
 
-func (m *ScreenCluster) GetNumberOfScreens() int32 {
+func (m *Tickers) GetTickers() []*Ticker {
 	if m != nil {
-		return m.NumberOfScreens
-	}
-	return 0
-}
-
-func (m *ScreenCluster) GetTickerBoxWidth() int32 {
-	if m != nil {
-		return m.TickerBoxWidth
-	}
-	return 0
-}
-
-func (m *ScreenCluster) GetGlobalViewportSize() int64 {
-	if m != nil {
-		return m.GlobalViewportSize
-	}
-	return 0
-}
-
-func (m *ScreenCluster) GetScrollSpeed() int32 {
-	if m != nil {
-		return m.ScrollSpeed
-	}
-	return 0
-}
-
-func (m *ScreenCluster) GetScreens() []*Screen {
-	if m != nil {
-		return m.Screens
+		return m.Tickers
 	}
 	return nil
 }
 
+type Empty struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Empty) Reset()         { *m = Empty{} }
+func (m *Empty) String() string { return proto.CompactTextString(m) }
+func (*Empty) ProtoMessage()    {}
+func (*Empty) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0b5431a010549573, []int{8}
+}
+
+func (m *Empty) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Empty.Unmarshal(m, b)
+}
+func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Empty.Marshal(b, m, deterministic)
+}
+func (m *Empty) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Empty.Merge(m, src)
+}
+func (m *Empty) XXX_Size() int {
+	return xxx_messageInfo_Empty.Size(m)
+}
+func (m *Empty) XXX_DiscardUnknown() {
+	xxx_messageInfo_Empty.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Empty proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*Ticker)(nil), "models.Ticker")
-	proto.RegisterType((*Tickers)(nil), "models.Tickers")
+	proto.RegisterType((*PriceUpdate)(nil), "models.PriceUpdate")
 	proto.RegisterType((*Announcement)(nil), "models.Announcement")
-	proto.RegisterType((*Update)(nil), "models.Update")
 	proto.RegisterType((*Screen)(nil), "models.Screen")
 	proto.RegisterType((*ScreenCluster)(nil), "models.ScreenCluster")
+	proto.RegisterType((*PresentationSettings)(nil), "models.PresentationSettings")
+	proto.RegisterType((*Update)(nil), "models.Update")
+	proto.RegisterType((*Tickers)(nil), "models.Tickers")
+	proto.RegisterType((*Empty)(nil), "models.Empty")
 }
 
 func init() { proto.RegisterFile("models.proto", fileDescriptor_0b5431a010549573) }
 
 var fileDescriptor_0b5431a010549573 = []byte{
-	// 562 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x54, 0xcf, 0x6e, 0xd4, 0x3e,
-	0x10, 0xae, 0x7f, 0xf9, 0x25, 0x15, 0xb3, 0xa5, 0xad, 0xac, 0x16, 0x45, 0x20, 0xa1, 0x55, 0x0e,
-	0x55, 0xc4, 0x61, 0x41, 0x5b, 0x0e, 0x48, 0x9c, 0x96, 0x95, 0x28, 0x95, 0xfa, 0x4f, 0x4e, 0xa1,
-	0xe7, 0x34, 0x99, 0xdd, 0x8d, 0x48, 0xec, 0xc8, 0xf6, 0xd2, 0x16, 0x71, 0xe6, 0x31, 0x78, 0x1d,
-	0x9e, 0x82, 0x2b, 0xcf, 0x81, 0x6c, 0x27, 0x4b, 0x36, 0xec, 0x6d, 0xe6, 0xfb, 0xc6, 0xf6, 0x37,
-	0xdf, 0x4c, 0x02, 0x3b, 0x95, 0xc8, 0xb1, 0x54, 0xa3, 0x5a, 0x0a, 0x2d, 0x68, 0xe0, 0xb2, 0xe8,
-	0x37, 0x81, 0xe0, 0xba, 0xc8, 0x3e, 0xa3, 0xa4, 0x4f, 0xda, 0x28, 0x24, 0x43, 0x12, 0x3f, 0x62,
-	0x2d, 0x3e, 0x84, 0xc1, 0x54, 0x54, 0x75, 0xca, 0x1f, 0x2e, 0xd2, 0x0a, 0xc3, 0xff, 0x2c, 0xd9,
-	0x85, 0xe8, 0x01, 0xf8, 0x57, 0xb2, 0xc8, 0x30, 0xf4, 0x86, 0x24, 0x26, 0xcc, 0x25, 0xf4, 0x35,
-	0x1c, 0xda, 0x60, 0xba, 0x48, 0xf9, 0x1c, 0xaf, 0x50, 0x66, 0xc8, 0x75, 0x3a, 0xc7, 0xf0, 0x7f,
-	0x5b, 0xb5, 0x99, 0xa4, 0x23, 0xa0, 0x57, 0x12, 0xbf, 0x14, 0x62, 0xa9, 0xa6, 0xa5, 0x50, 0xe8,
-	0x2e, 0xf6, 0xed, 0x91, 0x0d, 0x8c, 0x79, 0xfb, 0x94, 0xe7, 0x78, 0x1f, 0x06, 0x43, 0x12, 0xfb,
-	0xcc, 0x25, 0x74, 0x1f, 0xbc, 0xd3, 0x6a, 0x1e, 0x6e, 0x5b, 0xcc, 0x84, 0xd1, 0x31, 0x6c, 0xbb,
-	0x7e, 0x14, 0x8d, 0x57, 0x61, 0x48, 0x86, 0x5e, 0x3c, 0x18, 0xef, 0x8e, 0x1a, 0x6f, 0x1c, 0xcc,
-	0x5a, 0x3a, 0xfa, 0x41, 0x60, 0x67, 0xc2, 0xb9, 0x58, 0xf2, 0x0c, 0x2b, 0xe4, 0x9a, 0x86, 0xb0,
-	0x7d, 0x8e, 0x4a, 0x99, 0x2e, 0x9c, 0x49, 0x6d, 0x4a, 0x5f, 0xc0, 0x7e, 0xb7, 0xf2, 0xfa, 0xa1,
-	0x6e, 0xad, 0xfa, 0x07, 0xa7, 0x31, 0xec, 0x25, 0x0b, 0x71, 0x37, 0xd1, 0xd7, 0x45, 0x85, 0x4a,
-	0xa7, 0x55, 0x6d, 0x9d, 0xf3, 0x58, 0x1f, 0xa6, 0xcf, 0x01, 0xce, 0x8a, 0x19, 0xaa, 0x3a, 0xe5,
-	0xe7, 0x89, 0x35, 0xce, 0x63, 0x1d, 0x24, 0xfa, 0x49, 0x20, 0xf8, 0x58, 0xe7, 0xa9, 0x46, 0x53,
-	0xea, 0x22, 0xfb, 0x34, 0xb1, 0x9d, 0x77, 0x10, 0xfa, 0x16, 0x1e, 0x27, 0x99, 0x44, 0xe4, 0xd3,
-	0x72, 0xa9, 0x34, 0x4a, 0xab, 0x6e, 0x30, 0x3e, 0x6c, 0x7b, 0x5f, 0x23, 0xd9, 0x7a, 0x2d, 0x3d,
-	0x5a, 0xed, 0x86, 0x67, 0x4f, 0xf5, 0x1d, 0x6b, 0x77, 0xe5, 0x0d, 0xec, 0x4c, 0xb2, 0x6c, 0xd5,
-	0xad, 0x55, 0x3c, 0x18, 0x1f, 0xb4, 0xd5, 0x5d, 0x27, 0xd8, 0x5a, 0x65, 0xf4, 0x0d, 0x02, 0xf7,
-	0xa4, 0x99, 0xe8, 0x4d, 0x91, 0xeb, 0x45, 0xd3, 0x83, 0x4b, 0xcc, 0x76, 0x7e, 0xc0, 0x62, 0xbe,
-	0xd0, 0x56, 0xb7, 0xcf, 0x9a, 0xec, 0xef, 0xfc, 0xbd, 0xee, 0xfc, 0x47, 0x40, 0xdd, 0x6d, 0x27,
-	0xa5, 0xb8, 0x4d, 0xcb, 0xcb, 0xd9, 0x4c, 0xa1, 0x6e, 0xfc, 0xdb, 0xc0, 0x44, 0xbf, 0x48, 0xcf,
-	0x1d, 0x33, 0xa3, 0x8b, 0x65, 0x75, 0x8b, 0xf2, 0x72, 0xe6, 0x08, 0xd5, 0xe8, 0xe9, 0xc3, 0xf4,
-	0x08, 0x76, 0x5d, 0xf7, 0xef, 0xc4, 0xbd, 0x13, 0xee, 0x14, 0xf6, 0x50, 0xa3, 0xc9, 0xbd, 0xf9,
-	0xa9, 0xc0, 0xbb, 0x5a, 0x48, 0x9d, 0x14, 0x5f, 0xb1, 0x19, 0xfc, 0x06, 0xc6, 0x7c, 0x77, 0x49,
-	0x26, 0x45, 0x59, 0x26, 0x35, 0x62, 0x6e, 0xc5, 0xfb, 0xac, 0x0b, 0x99, 0x45, 0x6e, 0xb5, 0xf9,
-	0xeb, 0x8b, 0xec, 0x60, 0xd6, 0xd2, 0xe3, 0xef, 0x04, 0xf6, 0x9d, 0x9c, 0x9b, 0xb4, 0x2c, 0xcf,
-	0x30, 0xcd, 0x51, 0xd2, 0x09, 0x3c, 0x63, 0x38, 0x2f, 0x4c, 0xbb, 0x13, 0x9e, 0x9f, 0x99, 0x80,
-	0xbf, 0x17, 0xd2, 0xed, 0x8c, 0xa2, 0xbd, 0xcb, 0x9e, 0xae, 0x72, 0x57, 0x10, 0x6d, 0xbd, 0x22,
-	0xf4, 0x25, 0xc0, 0x09, 0xea, 0xf6, 0xc3, 0xea, 0x9f, 0xd8, 0x5b, 0xdf, 0x12, 0x15, 0x6d, 0xdd,
-	0x06, 0xf6, 0xf7, 0x73, 0xfc, 0x27, 0x00, 0x00, 0xff, 0xff, 0x92, 0xd0, 0x7b, 0x07, 0x8e, 0x04,
-	0x00, 0x00,
+	// 698 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x54, 0xdd, 0x4e, 0xdb, 0x4a,
+	0x10, 0xc6, 0x49, 0x9c, 0x90, 0x31, 0x70, 0x38, 0x0b, 0x1c, 0x59, 0x08, 0xa1, 0xc8, 0x17, 0x47,
+	0x51, 0x55, 0x45, 0x34, 0xb4, 0x12, 0x2a, 0x57, 0x90, 0x54, 0x34, 0x15, 0x69, 0xa3, 0x35, 0x51,
+	0x6f, 0xeb, 0x26, 0x53, 0xc7, 0x6a, 0xbc, 0x6b, 0x79, 0x37, 0x05, 0x6e, 0xfb, 0x32, 0xbd, 0xeb,
+	0x33, 0xf4, 0x29, 0xfa, 0x3c, 0xd5, 0xee, 0xda, 0x89, 0x1d, 0xd2, 0x2b, 0xef, 0x7c, 0xdf, 0xfc,
+	0xec, 0xcc, 0x7c, 0x6b, 0xd8, 0x89, 0xf9, 0x14, 0xe7, 0xa2, 0x93, 0xa4, 0x5c, 0x72, 0x52, 0x37,
+	0x96, 0xf7, 0xb3, 0x02, 0xf5, 0xbb, 0x68, 0xf2, 0x15, 0x53, 0xf2, 0x5f, 0x7e, 0x72, 0xad, 0x96,
+	0xd5, 0x6e, 0xd2, 0x1c, 0x6f, 0x81, 0xd3, 0xe3, 0x71, 0x12, 0xb0, 0xc7, 0xf7, 0x41, 0x8c, 0x6e,
+	0x45, 0x93, 0x45, 0x88, 0x3c, 0x87, 0x7f, 0x3f, 0x2c, 0xa4, 0x90, 0x01, 0x9b, 0x46, 0x2c, 0xf4,
+	0x67, 0x41, 0x8a, 0xc2, 0xad, 0xb6, 0xac, 0x76, 0x95, 0x3e, 0x25, 0xc8, 0x21, 0xd8, 0xa3, 0x34,
+	0x9a, 0xa0, 0x5b, 0x6b, 0x59, 0x6d, 0x8b, 0x1a, 0x83, 0xbc, 0x84, 0x23, 0x7d, 0xe8, 0xcd, 0x02,
+	0x16, 0xe2, 0x08, 0xd3, 0x09, 0x32, 0x19, 0x84, 0xe8, 0xda, 0xda, 0x6b, 0x33, 0x49, 0x3a, 0x40,
+	0x46, 0x29, 0x7e, 0x8b, 0xf8, 0x42, 0xf4, 0xe6, 0x5c, 0xa0, 0x49, 0x5c, 0xd7, 0x21, 0x1b, 0x18,
+	0x55, 0x7b, 0xc0, 0xa6, 0xf8, 0xe0, 0x36, 0x5a, 0x56, 0xdb, 0xa6, 0xc6, 0x20, 0xfb, 0x50, 0x1d,
+	0xc4, 0xa1, 0xbb, 0xad, 0x31, 0x75, 0x24, 0x2e, 0x34, 0x06, 0x71, 0xd8, 0x0f, 0x64, 0xe0, 0x36,
+	0x5b, 0x56, 0x7b, 0x87, 0xe6, 0xa6, 0x77, 0x09, 0x8e, 0x4e, 0x35, 0x4e, 0xa6, 0x81, 0xc4, 0xbf,
+	0x0e, 0x6d, 0xd9, 0x64, 0xa5, 0xd0, 0xa4, 0xf7, 0xcb, 0x82, 0x9d, 0x2b, 0xc6, 0xf8, 0x82, 0x4d,
+	0x30, 0x46, 0x26, 0x55, 0x9d, 0x21, 0x0a, 0xa1, 0xfa, 0x34, 0xf1, 0xb9, 0x49, 0x9e, 0xc1, 0x7e,
+	0xd1, 0xf3, 0xee, 0x31, 0x31, 0xb9, 0x6c, 0xfa, 0x04, 0x57, 0xf3, 0xf7, 0x67, 0xfc, 0xfe, 0x4a,
+	0xde, 0x45, 0x31, 0x0a, 0x19, 0xc4, 0xc9, 0xd0, 0xcf, 0xe7, 0xff, 0x84, 0x20, 0xa7, 0x00, 0xb7,
+	0xd1, 0x17, 0x14, 0x49, 0xc0, 0x86, 0xbe, 0x5e, 0x42, 0x95, 0x16, 0x10, 0x72, 0x02, 0xcd, 0x2b,
+	0x16, 0xc5, 0x81, 0x8c, 0x38, 0xd3, 0xd3, 0xb7, 0xe9, 0x0a, 0xf0, 0x3e, 0x41, 0xdd, 0x9f, 0xa4,
+	0x88, 0x8c, 0x10, 0xa8, 0x8d, 0xc7, 0x83, 0x7e, 0x76, 0x71, 0x7d, 0x56, 0x6d, 0x7f, 0x8c, 0xa6,
+	0x72, 0x96, 0x5d, 0xd5, 0x18, 0x6a, 0x48, 0x6f, 0x31, 0x0a, 0x67, 0x52, 0x5f, 0xca, 0xa6, 0x99,
+	0xb5, 0xda, 0x46, 0xad, 0xb0, 0x0d, 0x4f, 0xc0, 0xae, 0xa9, 0xd0, 0x9b, 0x2f, 0x84, 0xc4, 0x94,
+	0x5c, 0xc0, 0xb6, 0x8f, 0x52, 0x46, 0x2c, 0x14, 0xba, 0x98, 0xd3, 0x3d, 0xe9, 0x64, 0x62, 0x1e,
+	0xa5, 0x28, 0x94, 0x14, 0xd4, 0xd5, 0x72, 0x1f, 0xba, 0xf4, 0x26, 0x6d, 0x68, 0x98, 0x54, 0xc2,
+	0xad, 0xb4, 0xaa, 0x6d, 0xa7, 0xbb, 0x97, 0x07, 0x1a, 0x98, 0xe6, 0xb4, 0xf7, 0xbd, 0x02, 0x87,
+	0x9b, 0x92, 0x91, 0xff, 0x61, 0xcf, 0xac, 0xf4, 0x9a, 0x3f, 0x98, 0xd6, 0x2c, 0x7d, 0xd9, 0x35,
+	0x54, 0xbd, 0x12, 0x7f, 0x92, 0xf2, 0xf9, 0xdc, 0x4f, 0x10, 0xa7, 0x59, 0xff, 0x45, 0x48, 0xed,
+	0x7a, 0x9c, 0xf4, 0xf8, 0x9c, 0xa7, 0x7a, 0x0c, 0x4d, 0x9a, 0x9b, 0x6a, 0xe2, 0x7d, 0x7e, 0xcf,
+	0x0c, 0x57, 0xd3, 0xdc, 0x0a, 0x50, 0x71, 0xd7, 0x37, 0x86, 0xb3, 0x4d, 0x5c, 0x66, 0xaa, 0x38,
+	0xb5, 0xde, 0x5b, 0x1e, 0x72, 0xa1, 0x45, 0xbf, 0x4d, 0x57, 0x00, 0x39, 0x83, 0x83, 0xe5, 0xda,
+	0xfa, 0x8b, 0x54, 0x7f, 0x87, 0x7e, 0xa6, 0xfc, 0x4d, 0x94, 0xf7, 0xdb, 0x82, 0x7a, 0xa6, 0xeb,
+	0x53, 0x00, 0x73, 0xd2, 0xc2, 0x33, 0x2d, 0x17, 0x10, 0xf2, 0xaa, 0xf4, 0x0c, 0x74, 0xbb, 0x4e,
+	0xf7, 0x60, 0xb5, 0x96, 0x25, 0x45, 0x4b, 0xcf, 0xe5, 0xa2, 0xac, 0x7f, 0x3d, 0x08, 0xa7, 0x7b,
+	0x98, 0xc7, 0x15, 0x39, 0x5a, 0x7e, 0x29, 0x97, 0x6b, 0xaa, 0xd0, 0x73, 0x72, 0xba, 0x47, 0xe5,
+	0x85, 0x66, 0x24, 0x2d, 0xfb, 0x7a, 0xe7, 0xd0, 0x30, 0xeb, 0xd2, 0x92, 0xc8, 0x8e, 0xae, 0x55,
+	0x96, 0x84, 0x81, 0x69, 0x4e, 0x7b, 0x0d, 0xb0, 0xdf, 0xc4, 0x89, 0x7c, 0xec, 0xfe, 0xb0, 0xa0,
+	0x7e, 0x8b, 0xc1, 0x14, 0x53, 0xf2, 0x02, 0x9c, 0x77, 0x3c, 0x5a, 0x2a, 0x73, 0x4d, 0x4e, 0xc7,
+	0x4b, 0xdb, 0xb4, 0xeb, 0x6d, 0x9d, 0x59, 0xa4, 0x03, 0x70, 0x83, 0x32, 0x2f, 0xbf, 0x9b, 0x7b,
+	0xe8, 0xd4, 0xc7, 0xff, 0x94, 0x8b, 0x0b, 0x6f, 0x8b, 0xbc, 0x86, 0xfd, 0x1b, 0x94, 0xe5, 0x17,
+	0xb0, 0x16, 0xb5, 0xb9, 0x69, 0x6f, 0xeb, 0x73, 0x5d, 0xff, 0xdc, 0xcf, 0xff, 0x04, 0x00, 0x00,
+	0xff, 0xff, 0xc8, 0x0b, 0x73, 0x10, 0xec, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -486,30 +652,32 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// TickerWallLeaderClient is the client API for TickerWallLeader service.
+// LeaderClient is the client API for Leader service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type TickerWallLeaderClient interface {
-	// Register our screen and listen for update events.
-	RegisterAndListenForUpdates(ctx context.Context, in *Screen, opts ...grpc.CallOption) (TickerWallLeader_RegisterAndListenForUpdatesClient, error)
+type LeaderClient interface {
+	// Join the screen cluster. Updates to the cluster will be streamed to clients.
+	JoinCluster(ctx context.Context, in *Screen, opts ...grpc.CallOption) (Leader_JoinClusterClient, error)
 	// Get our current list of tickers.
-	GetTickers(ctx context.Context, in *Screen, opts ...grpc.CallOption) (*Tickers, error)
+	GetTickers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Tickers, error)
+	// Get our current screen cluster.
+	GetScreenCluster(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ScreenCluster, error)
 }
 
-type tickerWallLeaderClient struct {
+type leaderClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewTickerWallLeaderClient(cc *grpc.ClientConn) TickerWallLeaderClient {
-	return &tickerWallLeaderClient{cc}
+func NewLeaderClient(cc *grpc.ClientConn) LeaderClient {
+	return &leaderClient{cc}
 }
 
-func (c *tickerWallLeaderClient) RegisterAndListenForUpdates(ctx context.Context, in *Screen, opts ...grpc.CallOption) (TickerWallLeader_RegisterAndListenForUpdatesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TickerWallLeader_serviceDesc.Streams[0], "/models.TickerWallLeader/RegisterAndListenForUpdates", opts...)
+func (c *leaderClient) JoinCluster(ctx context.Context, in *Screen, opts ...grpc.CallOption) (Leader_JoinClusterClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Leader_serviceDesc.Streams[0], "/models.Leader/JoinCluster", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tickerWallLeaderRegisterAndListenForUpdatesClient{stream}
+	x := &leaderJoinClusterClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -519,16 +687,16 @@ func (c *tickerWallLeaderClient) RegisterAndListenForUpdates(ctx context.Context
 	return x, nil
 }
 
-type TickerWallLeader_RegisterAndListenForUpdatesClient interface {
+type Leader_JoinClusterClient interface {
 	Recv() (*Update, error)
 	grpc.ClientStream
 }
 
-type tickerWallLeaderRegisterAndListenForUpdatesClient struct {
+type leaderJoinClusterClient struct {
 	grpc.ClientStream
 }
 
-func (x *tickerWallLeaderRegisterAndListenForUpdatesClient) Recv() (*Update, error) {
+func (x *leaderJoinClusterClient) Recv() (*Update, error) {
 	m := new(Update)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -536,90 +704,126 @@ func (x *tickerWallLeaderRegisterAndListenForUpdatesClient) Recv() (*Update, err
 	return m, nil
 }
 
-func (c *tickerWallLeaderClient) GetTickers(ctx context.Context, in *Screen, opts ...grpc.CallOption) (*Tickers, error) {
+func (c *leaderClient) GetTickers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Tickers, error) {
 	out := new(Tickers)
-	err := c.cc.Invoke(ctx, "/models.TickerWallLeader/GetTickers", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/models.Leader/GetTickers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TickerWallLeaderServer is the server API for TickerWallLeader service.
-type TickerWallLeaderServer interface {
-	// Register our screen and listen for update events.
-	RegisterAndListenForUpdates(*Screen, TickerWallLeader_RegisterAndListenForUpdatesServer) error
+func (c *leaderClient) GetScreenCluster(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ScreenCluster, error) {
+	out := new(ScreenCluster)
+	err := c.cc.Invoke(ctx, "/models.Leader/GetScreenCluster", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LeaderServer is the server API for Leader service.
+type LeaderServer interface {
+	// Join the screen cluster. Updates to the cluster will be streamed to clients.
+	JoinCluster(*Screen, Leader_JoinClusterServer) error
 	// Get our current list of tickers.
-	GetTickers(context.Context, *Screen) (*Tickers, error)
+	GetTickers(context.Context, *Empty) (*Tickers, error)
+	// Get our current screen cluster.
+	GetScreenCluster(context.Context, *Empty) (*ScreenCluster, error)
 }
 
-// UnimplementedTickerWallLeaderServer can be embedded to have forward compatible implementations.
-type UnimplementedTickerWallLeaderServer struct {
+// UnimplementedLeaderServer can be embedded to have forward compatible implementations.
+type UnimplementedLeaderServer struct {
 }
 
-func (*UnimplementedTickerWallLeaderServer) RegisterAndListenForUpdates(req *Screen, srv TickerWallLeader_RegisterAndListenForUpdatesServer) error {
-	return status.Errorf(codes.Unimplemented, "method RegisterAndListenForUpdates not implemented")
+func (*UnimplementedLeaderServer) JoinCluster(req *Screen, srv Leader_JoinClusterServer) error {
+	return status.Errorf(codes.Unimplemented, "method JoinCluster not implemented")
 }
-func (*UnimplementedTickerWallLeaderServer) GetTickers(ctx context.Context, req *Screen) (*Tickers, error) {
+func (*UnimplementedLeaderServer) GetTickers(ctx context.Context, req *Empty) (*Tickers, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTickers not implemented")
 }
-
-func RegisterTickerWallLeaderServer(s *grpc.Server, srv TickerWallLeaderServer) {
-	s.RegisterService(&_TickerWallLeader_serviceDesc, srv)
+func (*UnimplementedLeaderServer) GetScreenCluster(ctx context.Context, req *Empty) (*ScreenCluster, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetScreenCluster not implemented")
 }
 
-func _TickerWallLeader_RegisterAndListenForUpdates_Handler(srv interface{}, stream grpc.ServerStream) error {
+func RegisterLeaderServer(s *grpc.Server, srv LeaderServer) {
+	s.RegisterService(&_Leader_serviceDesc, srv)
+}
+
+func _Leader_JoinCluster_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Screen)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TickerWallLeaderServer).RegisterAndListenForUpdates(m, &tickerWallLeaderRegisterAndListenForUpdatesServer{stream})
+	return srv.(LeaderServer).JoinCluster(m, &leaderJoinClusterServer{stream})
 }
 
-type TickerWallLeader_RegisterAndListenForUpdatesServer interface {
+type Leader_JoinClusterServer interface {
 	Send(*Update) error
 	grpc.ServerStream
 }
 
-type tickerWallLeaderRegisterAndListenForUpdatesServer struct {
+type leaderJoinClusterServer struct {
 	grpc.ServerStream
 }
 
-func (x *tickerWallLeaderRegisterAndListenForUpdatesServer) Send(m *Update) error {
+func (x *leaderJoinClusterServer) Send(m *Update) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TickerWallLeader_GetTickers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Screen)
+func _Leader_GetTickers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TickerWallLeaderServer).GetTickers(ctx, in)
+		return srv.(LeaderServer).GetTickers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/models.TickerWallLeader/GetTickers",
+		FullMethod: "/models.Leader/GetTickers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TickerWallLeaderServer).GetTickers(ctx, req.(*Screen))
+		return srv.(LeaderServer).GetTickers(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _TickerWallLeader_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "models.TickerWallLeader",
-	HandlerType: (*TickerWallLeaderServer)(nil),
+func _Leader_GetScreenCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeaderServer).GetScreenCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/models.Leader/GetScreenCluster",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeaderServer).GetScreenCluster(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Leader_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "models.Leader",
+	HandlerType: (*LeaderServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetTickers",
-			Handler:    _TickerWallLeader_GetTickers_Handler,
+			Handler:    _Leader_GetTickers_Handler,
+		},
+		{
+			MethodName: "GetScreenCluster",
+			Handler:    _Leader_GetScreenCluster_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "RegisterAndListenForUpdates",
-			Handler:       _TickerWallLeader_RegisterAndListenForUpdates_Handler,
+			StreamName:    "JoinCluster",
+			Handler:       _Leader_JoinCluster_Handler,
 			ServerStreams: true,
 		},
 	},

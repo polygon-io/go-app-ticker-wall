@@ -1,9 +1,10 @@
-package main
+package client
 
 import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -147,7 +148,7 @@ func (t *TickerWallClient) LoadTickers(ctx context.Context) error {
 
 // downloadLogo downloads the logo from our predictable S3 endpoint. This is deprecated,
 // so we will need to update this soon...
-func downloadLogo(ticker *models.Ticker) error {
+func (t *TickerWallClient) DownloadLogo(ticker *models.Ticker) error {
 	logrus.Debug("Downloading logo for: ", ticker.Ticker)
 	url := "https://s3.polygon.io/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
 	response, e := http.Get(url)
@@ -156,18 +157,12 @@ func downloadLogo(ticker *models.Ticker) error {
 	}
 	defer response.Body.Close()
 
-	// Write it to disk
-	file, err := os.Create("./logos/" + ticker.Ticker + ".png")
+	imgData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to download ticker logo: %w", err)
 	}
-	defer file.Close()
 
-	// Use io.Copy to just dump the response body to the file.
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
+	ticker.Img = int32(0)
 
 	logrus.Debug("Done downloading logo for: ", ticker.Ticker)
 	return nil

@@ -2,66 +2,81 @@ syntax = "proto3";
 
 package models;
 
-service TickerWallLeader {
-    // Register our screen and listen for update events.
-    rpc RegisterAndListenForUpdates(Screen) returns (stream Update) {}
+// Leader is the exposed endpoint(s) for the leader service.
+service Leader {
+    // Join the screen cluster. Updates to the cluster will be streamed to clients.
+    rpc JoinCluster(Screen) returns (stream Update) {}
 
     // Get our current list of tickers.
-    rpc GetTickers(Screen) returns (Tickers) {} 
+    rpc GetTickers(Empty) returns (Tickers) {}
+
+    // Get our current screen cluster.
+    rpc GetScreenCluster(Empty) returns (ScreenCluster) {}
 }
 
 // Ticker is used to update a tickers information ( leader -> follower ).
 message Ticker {
-    string Ticker = 1;
-    string CompanyName = 2;
-    double Price = 3;
-    double PriceChangePercentage = 4;
-    double PreviousClosePrice = 5;
-    int32 Index = 6;
-    int32 Img = 7;
-}
-message Tickers {
-    repeated Ticker Tickers = 1;
+    string Ticker                   = 1;
+    string CompanyName              = 2;
+    int64 OutstandingShares         = 3;
+    double Price                    = 4;
+    double PriceChangePercentage    = 5;
+    double PreviousClosePrice       = 6;
+    int32 Index                     = 7;
+    int32 Img                       = 8;
+    bytes ImgData                   = 9;
 }
 
-// Announcement
+// PriceUpdate is the message sent when a price updates for a ticker.
+message PriceUpdate {
+    string Ticker   = 1;
+    double Price    = 2;
+}
+
+// Announcement is used to display a special message on the display.
 message Announcement {
-    string Message = 1;
-    string AnnouncementType = 2;
-    int64 ShowAtTimestamp = 3;
-    int64 LifespanMS = 4;
-    string Animation = 5;
-}
-
-// Update is a generalized container for all update types.
-message Update {
-    // Defines which type of update this is.
-    int32 UpdateType = 1;
-
-    // Screen Cluster Information.
-    ScreenCluster ScreenCluster = 2;
-
-    // Ticker Update Information.
-    Ticker Ticker = 3;
-
-    // Announcement Information.
-    Announcement Accouncement = 4;
+    string Message              = 1;
+    int32 AnnouncementType      = 2;
+    int64 ShowAtTimestampMS     = 3;
+    int64 LifespanMS            = 4;
+    int32 Animation             = 5;
 }
 
 // Screen contains all screen information about an individual screen.
 message Screen {
-    int32 Width = 1;
-    int32 Height = 2;
-    int32 Index = 3;
-    int64 ScreenGlobalOffset = 4; // This screens (0,0) offset in context of the cluster.
+    string UUID     = 1;
+    int32 Width     = 2;
+    int32 Height    = 3;
+    int32 Index     = 4;
 }
 
 // ScreenCluster contains information about the whole screen cluster.
 message ScreenCluster {
-    int32 NumberOfScreens = 1;
-    int32 TickerBoxWidth = 2;
-    int64 GlobalViewportSize = 3;
-    int32 ScrollSpeed = 4;
-
-    repeated Screen Screens = 5;
+    PresentationSettings Settings   = 1;
+    repeated Screen Screens         = 2;
 }
+
+message PresentationSettings {
+    int32 TickerBoxWidth        = 1;
+    int32 ScrollSpeed           = 2;
+    string UpColor              = 3;
+    string DownColor            = 4;
+    string BGColor              = 5;
+    bool ShowLogos              = 6;
+    int32 AnimationDurationMS   = 7;
+}
+
+// Update encapsulates different update messages. 
+message Update {
+    int32 UpdateType                = 1;
+    PriceUpdate PriceUpdate         = 2;
+    Announcement Announcement       = 3;
+    ScreenCluster ScreenCluster     = 4;
+}
+
+
+// Group of Tickers
+message Tickers {
+    repeated Ticker Tickers = 1;
+}
+message Empty {} // service has no input

@@ -3,54 +3,28 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
-func (t *TickerWallLeader) RegisterAndListenForUpdates(screen *models.Screen, stream models.TickerWallLeader_RegisterAndListenForUpdatesServer) error {
-	logrus.Info("Got Screen: ", screen.Index)
-	screenClient := &ScreenClient{
-		Screen:  screen,
-		Stream:  stream,
-		Updates: make(chan *models.Update, 10), // dont block.
+// startGRPC starts the gRPC server. When the given context ends, it will shutdown the gRPC server.
+func startGRPC(ctx context.Context, port int, tickerWallLeader models.LeaderServer) error {
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	// Add new screen client.
-	if err := t.addScreenToCluster(screenClient); err != nil {
-		return fmt.Errorf("unable to add new screen client: %w", err)
-	}
-
-	// Remove this screen when we close the request.
-	defer func() {
-		if err := t.removeScreenFromCluster(screenClient); err != nil { // When we disconnect, remove from cluster.
-			logrus.WithError(err).Error("Couldn't remove screen..")
-		}
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+	go func() {
+		<-ctx.Done()
+		logrus.Debug("Closing gRPC server.")
+		grpcServer.Stop()
 	}()
 
-	for {
-		select {
-		case <-stream.Context().Done():
-			// Client has disconnected.
-			return nil
-		case update, ok := <-screenClient.Updates:
-			if !ok {
-				return nil
-			}
-
-			if err := screenClient.Stream.Send(update); err != nil {
-				return err
-			}
-		}
-	}
-}
-
-// GetTickers returns our current state of ticker data.
-func (t *TickerWallLeader) GetTickers(ctx context.Context, screen *models.Screen) (*models.Tickers, error) {
-	t.RLock()
-	defer t.RUnlock()
-
-	return &models.Tickers{
-		Tickers: t.Tickers,
-	}, nil
+	models.RegisterLeaderServer(grpcServer, tickerWallLeader)
+	return grpcServer.Serve(lis)
 }
