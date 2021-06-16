@@ -114,29 +114,20 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 		g.fpsGraph.UpdateGraph()
 
 		if g.client.Cluster == nil {
-			logrus.Debug("Cluster not ready yet. Check gRPC.")
+			// This should be displayed on the app using a new system message method.
+			logrus.Debug("Cluster not ready yet. Waiting on gRPC..")
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		// Clear
-		// gl.ClearColor(0, 0, 0, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
-
 		g.nanoCtx.BeginFrame(g.windowWidth, g.windowHeight, g.pixelRatio)
 
-		// Set BG color
-		g.nanoCtx.BeginPath()
-		g.nanoCtx.RoundedRect(0, 0, float32(g.windowWidth), float32(g.windowHeight), 0)
-		g.nanoCtx.SetFillColor(nanovgo.RGBA(
-			uint8(g.client.Cluster.Settings.BGColor.Red),
-			uint8(g.client.Cluster.Settings.BGColor.Green),
-			uint8(g.client.Cluster.Settings.BGColor.Blue),
-			uint8(g.client.Cluster.Settings.BGColor.Alpha),
-		))
-		g.nanoCtx.Fill()
+		globalOffsetTimestamp := g.generateGlobalOffset()
 
-		globalOffsetTimestamp := time.Now().UnixNano() / int64(g.client.Cluster.Settings.ScrollSpeed*int32(time.Millisecond))
+		// Set BG color
+		g.paintBG()
 
 		// Actual application drawing.
 		if err := g.renderTickers(globalOffsetTimestamp); err != nil {
@@ -145,14 +136,10 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 
 		// // If we have an announcement, display it.
 		// if tickerWallClient.announcement != nil {
-		// 	renderSpecialMessage(g.nanoCtx,
-		// 		mgr,
-		// 		t,
-		// 		tickerWallClient.announcement,
-		// 	)
+		// 	renderSpecialMessage(g.nanoCtx, mgr, t, tickerWallClient.announcement)
 		// }
 
-		g.fpsGraph.RenderGraph(g.nanoCtx, -50, -50)
+		g.renderFPSGraph()
 		g.nanoCtx.EndFrame()
 		gl.Enable(gl.DEPTH_TEST)
 		g.window.SwapBuffers()
@@ -160,4 +147,42 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 	}
 
 	return ctx.Err()
+}
+
+// renderFPSGraph always renders the graph, but this decides if it should be displayed
+// visibly. Removing the graph caused a massive memory leak.
+// TODO: Find/Fix the memory leak so we don't always have to display the graph.
+func (g *GUI) renderFPSGraph() {
+	g.client.RLock()
+	defer g.client.RUnlock()
+
+	if g.client.Cluster.Settings.ShowFPS {
+		g.fpsGraph.RenderGraph(g.nanoCtx, 50, 50)
+	} else {
+		g.fpsGraph.RenderGraph(g.nanoCtx, -50, -50)
+	}
+}
+
+// generateGlobalOffset generates the pixel offset taking into account the scroll speed.
+func (g *GUI) generateGlobalOffset() int64 {
+	g.client.RLock()
+	defer g.client.RUnlock()
+
+	return time.Now().UnixNano() / int64(g.client.Cluster.Settings.ScrollSpeed*int32(time.Millisecond))
+}
+
+func (g *GUI) paintBG() {
+	g.client.RLock()
+	defer g.client.RUnlock()
+
+	// Set BG color
+	g.nanoCtx.BeginPath()
+	g.nanoCtx.RoundedRect(0, 0, float32(g.windowWidth), float32(g.windowHeight), 0)
+	g.nanoCtx.SetFillColor(nanovgo.RGBA(
+		uint8(g.client.Cluster.Settings.BGColor.Red),
+		uint8(g.client.Cluster.Settings.BGColor.Green),
+		uint8(g.client.Cluster.Settings.BGColor.Blue),
+		uint8(g.client.Cluster.Settings.BGColor.Alpha),
+	))
+	g.nanoCtx.Fill()
 }

@@ -64,7 +64,8 @@ message PresentationSettings {
     RGBA DownColor              = 4;
     RGBA BGColor                = 5;
     bool ShowLogos              = 6;
-    int32 AnimationDurationMS   = 7;
+    bool ShowFPS                = 7;
+    int32 AnimationDurationMS   = 8;
 }
 
 // Update encapsulates different update messages. 
