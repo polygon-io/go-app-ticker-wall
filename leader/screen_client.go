@@ -8,20 +8,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (t *Leader) addScreenToCluster(screenClient *UpdateClient) error {
-	// Add the client and sort them (asc).
-	t.Lock()
-	t.Clients = append(t.Clients, screenClient)
-	sort.Sort(UpdateClientSlice(t.Clients))
-	t.Unlock()
-
-	// Update the cluster
-	t.Updates <- &models.Update{
-		UpdateType:    int32(models.UpdateTypeCluster),
-		ScreenCluster: t.CurrentScreenCluster(),
-	}
-
-	return nil
+// UpdateClient is a generic wrapper which is used for all clients which are requesting
+// updates be sent to them.
+type UpdateClient struct {
+	UUID    string
+	Screen  *models.Screen
+	Updates chan *models.Update
+	Stream  models.Leader_JoinClusterServer
 }
 
 // CurrentScreenCluster will take the current clients and create a ScreenCluster model.
@@ -37,6 +30,22 @@ func (t *Leader) CurrentScreenCluster() *models.ScreenCluster {
 	}
 
 	return res
+}
+
+func (t *Leader) addScreenToCluster(screenClient *UpdateClient) error {
+	// Add the client and sort them (asc).
+	t.Lock()
+	t.Clients = append(t.Clients, screenClient)
+	sort.Sort(UpdateClientSlice(t.Clients))
+	t.Unlock()
+
+	// Update the cluster
+	t.Updates <- &models.Update{
+		UpdateType:    int32(models.UpdateTypeCluster),
+		ScreenCluster: t.CurrentScreenCluster(),
+	}
+
+	return nil
 }
 
 func (t *Leader) removeScreenFromCluster(screen *UpdateClient) error {

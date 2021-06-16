@@ -34,33 +34,6 @@ type Leader struct {
 	Updates chan *models.Update
 }
 
-// Config handles the default settings, as well as data client auth.
-type Config struct {
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
-	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,FB,NFLX,LPL,AMZN,SNAP,NKE,SBUX,SQ,INTC,IBM"`
-	APIKey string `split_words:"true" required:"true"` // polygon.io API key.
-
-	// Presentation Default Settings
-	Presentation struct {
-		TickerBoxWidthPx  int    `split_words:"true" default:"1300"`
-		ScrollSpeed       int    `split_words:"true" default:"16"`
-		AnimationDuration int    `split_words:"true" default:"500"`
-		UpColor           string `split_words:"true" default:"TBI"`
-		DownColor         string `split_words:"true" default:"TBI"`
-		BGColor           string `split_words:"true" default:"TBI"`
-		ShowLogos         bool   `split_words:"true" default:"true"`
-	}
-}
-
-// UpdateClient is a generic wrapper which is used for all clients which are requesting
-// updates be sent to them.
-type UpdateClient struct {
-	UUID    string
-	Screen  *models.Screen
-	Updates chan *models.Update
-	Stream  models.Leader_JoinClusterServer
-}
-
 // New creates a new ticker wall leader.
 func New() (*Leader, error) {
 	// Parse environment variables.
@@ -125,7 +98,7 @@ func (t *Leader) Run(ctx context.Context) error {
 
 	// Listen and broadcast price updates.
 	tomb.Go(func() error {
-		return t.broadcastPriceUpdates(ctx)
+		return t.broadcastPriceUpdatesLoop(ctx)
 	})
 
 	// Broadcast updates to clients.
@@ -145,37 +118,4 @@ func (t *Leader) getTickerSymbols() []string {
 	}
 
 	return tickers
-}
-
-// broadcastPriceUpdates listens to updates from the DataClient and sends that to all gRPC clients.
-func (t *Leader) broadcastPriceUpdates(ctx context.Context) error {
-	// Read from DataClient price updates channel onto our update channel.
-	for priceUpdate := range t.DataClient.PriceUpdates {
-		t.Updates <- &models.Update{
-			UpdateType:  int32(models.UpdateTypePrice),
-			PriceUpdate: priceUpdate,
-		}
-	}
-
-	return nil
-}
-
-// clientUpdateLoop spins until we have an update, which is then queued up for all existing clients.
-func (t *Leader) clientUpdateLoop(ctx context.Context) error {
-	defer close(t.Updates)
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case update := <-t.Updates:
-			t.Lock()
-
-			// Put this update on the clients queue.
-			for _, client := range t.Clients {
-				client.Updates <- update
-			}
-
-			t.Unlock()
-		}
-	}
 }
