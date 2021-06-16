@@ -38,22 +38,37 @@ type Leader struct {
 func New() (*Leader, error) {
 	// Parse environment variables.
 	var cfg Config
-	err := envconfig.Process("LEADER", &cfg)
-	if err != nil {
+	if err := envconfig.Process("LEADER", &cfg); err != nil {
 		return nil, err
 	}
 
 	obj := &Leader{
 		config: cfg,
 		PresentationSettings: &models.PresentationSettings{
+			AnimationDurationMS: int32(cfg.Presentation.AnimationDuration),
 			TickerBoxWidth:      int32(cfg.Presentation.TickerBoxWidthPx),
 			ScrollSpeed:         int32(cfg.Presentation.ScrollSpeed),
-			UpColor:             cfg.Presentation.UpColor,
-			DownColor:           cfg.Presentation.DownColor,
-			BGColor:             cfg.Presentation.BGColor,
 			ShowLogos:           cfg.Presentation.ShowLogos,
-			AnimationDurationMS: int32(cfg.Presentation.AnimationDuration),
+			UpColor: &models.RGBA{
+				Red:   cfg.Presentation.UpColor["red"],
+				Green: cfg.Presentation.UpColor["green"],
+				Blue:  cfg.Presentation.UpColor["blue"],
+				Alpha: cfg.Presentation.UpColor["alpha"],
+			},
+			DownColor: &models.RGBA{
+				Red:   cfg.Presentation.DownColor["red"],
+				Green: cfg.Presentation.DownColor["green"],
+				Blue:  cfg.Presentation.DownColor["blue"],
+				Alpha: cfg.Presentation.DownColor["alpha"],
+			},
+			BGColor: &models.RGBA{
+				Red:   cfg.Presentation.BGColor["red"],
+				Green: cfg.Presentation.BGColor["green"],
+				Blue:  cfg.Presentation.BGColor["blue"],
+				Alpha: cfg.Presentation.BGColor["alpha"],
+			},
 		},
+		Updates: make(chan *models.Update, 1000),
 	}
 
 	// Split out the tickers from the config.

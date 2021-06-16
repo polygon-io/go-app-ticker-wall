@@ -20,11 +20,12 @@ message Ticker {
     string CompanyName              = 2;
     int64 OutstandingShares         = 3;
     double Price                    = 4;
-    double PriceChangePercentage    = 5;
-    double PreviousClosePrice       = 6;
-    int32 Index                     = 7;
-    int32 Img                       = 8;
-    bytes ImgData                   = 9;
+    double MarketCap                = 5;
+    double PriceChangePercentage    = 6;
+    double PreviousClosePrice       = 7;
+    int32 Index                     = 8;
+    int32 Img                       = 9;
+    bytes ImgData                   = 10;
 }
 
 // PriceUpdate is the message sent when a price updates for a ticker.
@@ -59,9 +60,9 @@ message ScreenCluster {
 message PresentationSettings {
     int32 TickerBoxWidth        = 1;
     int32 ScrollSpeed           = 2;
-    string UpColor              = 3;
-    string DownColor            = 4;
-    string BGColor              = 5;
+    RGBA UpColor                = 3;
+    RGBA DownColor              = 4;
+    RGBA BGColor                = 5;
     bool ShowLogos              = 6;
     int32 AnimationDurationMS   = 7;
 }
@@ -72,6 +73,15 @@ message Update {
     PriceUpdate PriceUpdate         = 2;
     Announcement Announcement       = 3;
     ScreenCluster ScreenCluster     = 4;
+    Ticker Ticker                   = 5;
+}
+
+// RGBA is how we represent colors.
+message RGBA {
+    int32 Red       = 1;
+    int32 Green     = 2;
+    int32 Blue      = 3;
+    int32 Alpha     = 4;
 }
 
 

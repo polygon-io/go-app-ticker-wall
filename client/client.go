@@ -4,47 +4,80 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
-	"strings"
+	"sync"
 
+	"github.com/google/uuid"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/polygon-io/go-app-ticker-wall/models"
-	tickerManager "github.com/polygon-io/go-app-ticker-wall/ticker_manager"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	tombv2 "gopkg.in/tomb.v2"
 )
 
-// TickerWallClient manages the connection / interaction with leader.
-type TickerWallClient struct {
-	cfg    *ServiceConfig
-	conn   *grpc.ClientConn
-	client models.TickerWallLeaderClient
-	screen *models.Screen
+const maxMessageSize = 1024 * 1024 * 1 // 1MB
 
-	manager      tickerManager.TickerManager
+// Client keeps the client in sync with the leader.
+type Client struct {
+	sync.RWMutex
+	config Config
+
+	conn   *grpc.ClientConn
+	client models.LeaderClient
+
+	// State which will be kept in sync.
+	Screen       *models.Screen
+	Tickers      []*models.Ticker
+	Cluster      *models.ScreenCluster
 	announcement *models.Announcement
 }
 
-// NewTickerWallClient creates a new ticker wall client.
-func NewTickerWallClient(cfg *ServiceConfig, manager tickerManager.TickerManager) *TickerWallClient {
-	obj := &TickerWallClient{
-		cfg:     cfg,
-		manager: manager,
-		screen: &models.Screen{
-			Width:              int32(cfg.ScreenWidth),
-			Height:             int32(cfg.ScreenHeight),
-			Index:              int32(cfg.ScreenIndex),
-			ScreenGlobalOffset: 0,
+// New creates a new ticker wall client.
+func New() (*Client, error) {
+	// Parse Env Vars:
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		return nil, err
+	}
+
+	obj := &Client{
+		config: cfg,
+		Screen: &models.Screen{
+			UUID:   uuid.NewString(),
+			Width:  int32(cfg.ScreenWidth),
+			Height: int32(cfg.ScreenHeight),
+			Index:  int32(cfg.ScreenIndex),
 		},
 	}
-	return obj
+
+	return obj, nil
 }
 
 // Run starts all of our go routines / listeners.
-func (t *TickerWallClient) Run(ctx context.Context) error {
-	updateListener, err := t.client.RegisterAndListenForUpdates(ctx, t.screen)
+func (t *Client) Run(ctx context.Context) error {
+	// Create gRPC connection, close when done.
+	if err := t.startGRPCClient(); err != nil {
+		return err
+	}
+	defer t.Close()
+
+	// Create new tomb for this process.
+	tomb, ctx := tombv2.WithContext(ctx)
+
+	// Join the leaders screen cluster, wait for updates.
+	tomb.Go(func() error {
+		return t.joinCluster(ctx)
+	})
+
+	// Load in all ticker data.
+	tomb.Go(func() error {
+		return t.LoadTickers(ctx)
+	})
+
+	return tomb.Wait()
+}
+
+func (t *Client) joinCluster(ctx context.Context) error {
+	updateListener, err := t.client.JoinCluster(ctx, t.Screen)
 	if err != nil {
 		return err
 	}
@@ -60,132 +93,79 @@ func (t *TickerWallClient) Run(ctx context.Context) error {
 			return err
 		}
 
+		logrus.Info("Got Update: ", update.UpdateType)
+
 		if update == nil {
 			logrus.Warning("Update message empty...")
 			continue
 		}
 
-		switch update.UpdateType {
-		case models.UpdateTypeCluster:
-			t.updateScreenCluster(update)
-		case models.UpdateTypeTicker:
-			t.updateTicker(update)
-		case models.UpdateTypeAnnouncement:
-			t.updateAnnouncement(update)
-		default:
-			logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
-		}
-	}
-}
-
-func (t *TickerWallClient) updateTicker(update *models.Update) error {
-	return t.manager.UpdateTicker(update.Ticker)
-}
-
-func (t *TickerWallClient) updateAnnouncement(update *models.Update) error {
-	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
-	t.announcement = update.Accouncement
-	return nil
-}
-
-func (t *TickerWallClient) updateScreenCluster(update *models.Update) error {
-	logrus.Debug("Updating screen cluster information..")
-	var localizedOffset int64
-	for _, screen := range update.ScreenCluster.Screens {
-		// This is our index offset
-		if int(screen.Index) < t.cfg.ScreenIndex {
-			localizedOffset += int64(screen.Width)
-		}
-	}
-
-	// Configure new presentation settings.
-	presentationSettings := &tickerManager.PresentationData{
-		ScreenGlobalOffset: localizedOffset,
-		NumberOfScreens:    len(update.ScreenCluster.Screens),
-		GlobalViewportSize: update.ScreenCluster.GlobalViewportSize,
-		TickerBoxWidth:     int(update.ScreenCluster.TickerBoxWidth),
-		ScreenWidth:        t.cfg.ScreenWidth,
-		ScreenHeight:       t.cfg.ScreenHeight,
-		ScrollSpeed:        int(update.ScreenCluster.ScrollSpeed),
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"globalScreenOffset": presentationSettings.ScreenGlobalOffset,
-		"globalViewportSize": presentationSettings.GlobalViewportSize,
-		"screens":            presentationSettings.NumberOfScreens,
-	}).Debug("Presentation Data Updated")
-
-	// Update our presentation settings.
-	t.manager.SetPresentationData(presentationSettings)
-
-	return nil
-}
-
-func (t *TickerWallClient) LoadTickers(ctx context.Context) error {
-	tickers, err := t.client.GetTickers(ctx, t.screen)
-	if err != nil {
-		return err
-	}
-
-	// Add our tickers to the manager.
-	for _, ticker := range tickers.Tickers {
-		ticker.PriceChangePercentage = 1 - (ticker.Price / ticker.PreviousClosePrice)
-		t.manager.AddTicker(*ticker)
-
-		// ensure logos directory is created
-		if err := os.MkdirAll("./logos/", 0755); err != nil {
-			return fmt.Errorf("make output dir: %w", err)
-		}
-
-		// Download company logo
-		if err := downloadLogo(ticker); err != nil {
+		if err := t.processUpdate(update); err != nil {
 			return err
 		}
 	}
-
-	return nil
 }
 
-// downloadLogo downloads the logo from our predictable S3 endpoint. This is deprecated,
-// so we will need to update this soon...
-func (t *TickerWallClient) DownloadLogo(ticker *models.Ticker) error {
-	logrus.Debug("Downloading logo for: ", ticker.Ticker)
-	url := "https://s3.polygon.io/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
-	response, e := http.Get(url)
-	if e != nil {
-		log.Fatal(e)
+func (t *Client) processUpdate(update *models.Update) error {
+	switch models.UpdateType(update.UpdateType) {
+
+	// Screen cluster has changed.
+	case models.UpdateTypeCluster:
+		t.updateScreenCluster(update.ScreenCluster)
+
+	// Ticker added.
+	case models.UpdateTypeTickerAdded:
+		if err := t.tickerAdded(update.Ticker); err != nil {
+			return err
+		}
+
+	// Ticker removed.
+	case models.UpdateTypeTickerRemoved:
+		if err := t.tickerRemoved(update.Ticker); err != nil {
+			return err
+		}
+
+	// Price of a ticker updated.
+	case models.UpdateTypePrice:
+		if err := t.tickerPriceUpdate(update.PriceUpdate); err != nil {
+			return err
+		}
+
+	// We have a new announcement.
+	case models.UpdateTypeAnnouncement:
+		t.updateAnnouncement(update.Announcement)
+
+	default:
+		logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
 	}
-	defer response.Body.Close()
 
-	imgData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return fmt.Errorf("unable to download ticker logo: %w", err)
-	}
-
-	ticker.Img = int32(0)
-
-	logrus.Debug("Done downloading logo for: ", ticker.Ticker)
 	return nil
 }
 
 // Close cleans up our current grpc connection.
-func (t *TickerWallClient) Close() error {
+func (t *Client) Close() error {
 	return t.conn.Close()
 }
 
-// CreateGRPCClient creates a new GRPC client connection.
-func (t *TickerWallClient) CreateGRPCClient() error {
+// startGRPCClient creates a new GRPC client connection.
+func (t *Client) startGRPCClient() error {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)))
 
-	conn, err := grpc.Dial(cfg.Leader, opts...)
+	conn, err := grpc.Dial(t.config.Leader, opts...)
 	if err != nil {
 		return fmt.Errorf("not able to connect to grpc ticker wall leader: %w", err)
 	}
 
 	// Set our attributes.
 	t.conn = conn
-	t.client = models.NewTickerWallLeaderClient(t.conn)
+	t.client = models.NewLeaderClient(t.conn)
 
+	return nil
+}
+
+func (t *Client) updateAnnouncement(announcement *models.Announcement) error {
+	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
+	t.announcement = announcement
 	return nil
 }

@@ -4,15 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 )
 
 func (t *Leader) JoinCluster(screen *models.Screen, stream models.Leader_JoinClusterServer) error {
-	// Give this screen a unique ID
-	screen.UUID = uuid.NewString()
-
 	logrus.WithFields(logrus.Fields{
 		"uuid":   screen.UUID,
 		"index":  screen.Index,
@@ -32,6 +28,8 @@ func (t *Leader) JoinCluster(screen *models.Screen, stream models.Leader_JoinClu
 		return fmt.Errorf("unable to add new screen client: %w", err)
 	}
 
+	logrus.Debug("Screen added")
+
 	// Remove this screen when we close the request.
 	defer func() {
 		if err := t.removeScreenFromCluster(client); err != nil { // When we disconnect, remove from cluster.
@@ -43,12 +41,14 @@ func (t *Leader) JoinCluster(screen *models.Screen, stream models.Leader_JoinClu
 		select {
 		case <-stream.Context().Done():
 			// Client has disconnected.
+			logrus.WithField("client", client.Screen.UUID).Debug("Client has disconnected.")
 			return nil
 		case update, ok := <-client.Updates:
 			if !ok {
 				return nil
 			}
 
+			logrus.WithField("client", client.Screen.UUID).Debug("Sending Client Update")
 			if err := client.Stream.Send(update); err != nil {
 				return err
 			}

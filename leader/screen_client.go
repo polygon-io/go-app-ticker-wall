@@ -11,7 +11,6 @@ import (
 // UpdateClient is a generic wrapper which is used for all clients which are requesting
 // updates be sent to them.
 type UpdateClient struct {
-	UUID    string
 	Screen  *models.Screen
 	Updates chan *models.Update
 	Stream  models.Leader_JoinClusterServer
@@ -54,7 +53,7 @@ func (t *Leader) removeScreenFromCluster(screen *UpdateClient) error {
 	// Find index of screen.
 	screenIndex := -1
 	for i, sc := range t.Clients {
-		if sc.UUID == screen.UUID {
+		if sc.Screen.UUID == screen.Screen.UUID {
 			screenIndex = i
 		}
 	}

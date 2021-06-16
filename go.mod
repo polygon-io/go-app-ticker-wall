@@ -3,6 +3,7 @@ module github.com/polygon-io/go-app-ticker-wall
 go 1.16
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fogleman/ease v0.0.0-20170301025033-8da417bf1776
 	github.com/gin-gonic/gin v1.7.1
 	github.com/golang/protobuf v1.5.2

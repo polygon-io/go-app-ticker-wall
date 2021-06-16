@@ -4,11 +4,12 @@ package models
 type UpdateType int32
 
 const (
-	UpdateTypeUnknown      UpdateType = 0
-	UpdateTypeCluster      UpdateType = 1
-	UpdateTypeTicker       UpdateType = 2
-	UpdateTypeAnnouncement UpdateType = 3
-	UpdateTypePrice        UpdateType = 4
+	UpdateTypeUnknown       UpdateType = 0
+	UpdateTypeCluster       UpdateType = 1
+	UpdateTypeTickerAdded   UpdateType = 2
+	UpdateTypeTickerRemoved UpdateType = 3
+	UpdateTypeAnnouncement  UpdateType = 4
+	UpdateTypePrice         UpdateType = 5
 )
 
 // AnnouncementType is used to signify the type of announcement / alert. Different announcement types behave differently.
