@@ -165,16 +165,14 @@ func (g *GUI) renderFPSGraph() {
 	}
 }
 
-var offset int64
-
 // generateGlobalOffset generates the pixel offset taking into account the scroll speed.
 func (g *GUI) generateGlobalOffset() int64 {
-	// settings := g.client.GetSettings()
+	settings := g.client.GetSettings()
 
-	// return time.Now().UnixNano() / int64(settings.ScrollSpeed*int32(time.Millisecond))
+	return time.Now().UnixNano() / int64(settings.ScrollSpeed*int32(time.Millisecond))
 	// return time.Now().UnixNano() / int64(time.Millisecond)
-	offset++
-	return offset
+	// offset++
+	// return offset
 }
 
 // paintBG sets the background of the window to a solid color.
