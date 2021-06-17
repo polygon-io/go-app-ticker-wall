@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (t *Client) updateScreenCluster(cluster *models.ScreenCluster) {
+func (t *ClusterClient) updateScreenCluster(cluster *models.ScreenCluster) {
 	logrus.Debug("Updating screen cluster information..")
 	t.Lock()
 	defer t.Unlock()

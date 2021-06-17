@@ -30,14 +30,14 @@ func (t *Leader) clientUpdateLoop(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case update := <-t.Updates:
-			t.Lock()
+			t.RLock()
 
 			// Put this update on the clients queue.
 			for _, client := range t.Clients {
 				client.Updates <- update
 			}
 
-			t.Unlock()
+			t.RUnlock()
 		}
 	}
 }

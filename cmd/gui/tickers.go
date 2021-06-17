@@ -19,8 +19,8 @@ func (g *GUI) renderTickers(globalOffset int64) error {
 }
 
 func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset int64) error {
-	g.client.RLock()
-	defer g.client.RUnlock()
+	// Get necessary parameters.
+	settings := g.client.GetSettings()
 
 	g.nanoCtx.SetFontFace("sans-bold")
 	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
@@ -29,9 +29,9 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset int64) error {
 
 	// Green or red.
 	var rgbaColor *models.RGBA
-	rgbaColor = g.client.Cluster.Settings.UpColor
+	rgbaColor = settings.UpColor
 	if ticker.PriceChangePercentage < 0 {
-		rgbaColor = g.client.Cluster.Settings.DownColor
+		rgbaColor = settings.DownColor
 	}
 
 	// Set this tickers font color

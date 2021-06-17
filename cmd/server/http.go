@@ -84,7 +84,7 @@ func updatePresentation(leader *leader.Leader) func(*gin.Context) {
 
 		// Merge the new settings into the current settings. This make is so that updating a presentation setting
 		// doesn't require all settings, you can just update 1 attribute.
-		if err := mergo.Merge(leader.PresentationSettings, presentationSettings); err != nil {
+		if err := mergo.MergeWithOverwrite(leader.PresentationSettings, presentationSettings); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/sirupsen/logrus"
 )
 
 type polygonWrapper struct {
@@ -30,6 +31,7 @@ func (c *Client) AddTickerToUpdates(tickers []string) error {
 	if err := c.wsClient.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"subscribe","params":"%s"}`, strings.Join(tickers, ",")))); err != nil {
 		return fmt.Errorf("unable to send subscription message to websockets: %w", err)
 	}
+
 	return nil
 }
 
@@ -38,12 +40,19 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 	// Close our update channel when we exit.
 	defer close(c.tickerUpdate)
 
-	wsClient, _, err := websocket.DefaultDialer.Dial("wss://socket.polygon.io/stocks", nil)
+	wsClient, _, err := websocket.DefaultDialer.DialContext(ctx, "wss://socket.polygon.io/stocks", nil)
 	if err != nil {
 		return fmt.Errorf("unable to connect to websocket endpoint: %w", err)
 	}
 	c.wsClient = wsClient
 	defer c.wsClient.Close()
+
+	// Set close handler.
+	// TODO: Reconnect when websockets gets disconnected.
+	c.wsClient.SetCloseHandler(func(code int, text string) error {
+		logrus.Debug("Got close message")
+		return nil
+	})
 
 	if err := c.wsClient.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"auth","params":"%s"}`, c.APIKey))); err != nil {
 		return fmt.Errorf("unable to send auth message to websockets: %w", err)
@@ -57,20 +66,15 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 	// Starting a go routing in a library func is not great.
 	// Also, completely ignores the error returned.
 	go c.queueTickerUpdates(ctx)
+	go func() {
+		<-ctx.Done()
+		logrus.Debug("Context closed, ending WS connection.")
+		c.wsClient.Close()
+	}()
 
 	// As little logic as possible in the reader loop:
+	logrus.Debug("Listening to WebSockets for updates.")
 	for {
-		// Check if our context has ended.
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		// Set maximum time between message loops.
-		// deadline := time.Now().Add(2 * time.Second)
-		// if err := t.wsClient.SetReadDeadline(deadline); err != nil {
-		// 	return fmt.Errorf("not able to set read deadline on websocket stream: %w", err)
-		// }
-
 		// Read message from WS.
 		_, messageBody, err := c.wsClient.ReadMessage()
 		if err != nil {

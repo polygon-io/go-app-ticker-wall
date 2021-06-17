@@ -21,7 +21,7 @@ func startGRPC(ctx context.Context, port int, tickerWallLeader models.LeaderServ
 	grpcServer := grpc.NewServer(opts...)
 	go func() {
 		<-ctx.Done()
-		logrus.Debug("Closing gRPC server.")
+		logrus.Debug("Closing gRPC server.", ctx.Err())
 		grpcServer.Stop()
 	}()
 

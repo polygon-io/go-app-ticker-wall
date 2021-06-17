@@ -9,7 +9,7 @@ import (
 )
 
 // tickerPriceUpdate handles updating a tickers price & market cap.
-func (t *Client) tickerPriceUpdate(update *models.PriceUpdate) error {
+func (t *ClusterClient) tickerPriceUpdate(update *models.PriceUpdate) error {
 	t.Lock()
 	defer t.Unlock()
 
@@ -25,7 +25,7 @@ func (t *Client) tickerPriceUpdate(update *models.PriceUpdate) error {
 }
 
 // tickerAdded handles adding a ticker to our local state.
-func (t *Client) tickerAdded(ticker *models.Ticker) error {
+func (t *ClusterClient) tickerAdded(ticker *models.Ticker) error {
 	t.Lock()
 	t.Tickers = append(t.Tickers, ticker)
 	t.Unlock()
@@ -41,7 +41,7 @@ func (t *Client) tickerAdded(ticker *models.Ticker) error {
 }
 
 // tickerAdded handles removing a ticker from our local state.
-func (t *Client) tickerRemoved(ticker *models.Ticker) error {
+func (t *ClusterClient) tickerRemoved(ticker *models.Ticker) error {
 	t.Lock()
 
 	// Find index of the given ticker.
@@ -71,7 +71,7 @@ func (t *Client) tickerRemoved(ticker *models.Ticker) error {
 }
 
 // LoadTickers requests the full list of tickers from leader.
-func (t *Client) LoadTickers(ctx context.Context) error {
+func (t *ClusterClient) LoadTickers(ctx context.Context) error {
 	// Request full list of tickers from the leader.
 	tickers, err := t.client.GetTickers(ctx, &models.Empty{})
 	if err != nil {
@@ -85,7 +85,7 @@ func (t *Client) LoadTickers(ctx context.Context) error {
 	return nil
 }
 
-func (t *Client) sortAndTagTickers() {
+func (t *ClusterClient) sortAndTagTickers() {
 	t.Lock()
 	defer t.Unlock()
 

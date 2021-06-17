@@ -14,10 +14,19 @@ import (
 	tombv2 "gopkg.in/tomb.v2"
 )
 
+// Client provides the basic endpoints needed to access the state of this client.
+type Client interface {
+	GetTickers() []*models.Ticker
+	GetSettings() *models.PresentationSettings
+	GetCluster() *models.ScreenCluster
+	GetScreen() *models.Screen
+	GetAnnouncement() *models.Announcement
+}
+
 const maxMessageSize = 1024 * 1024 * 1 // 1MB
 
-// Client keeps the client in sync with the leader.
-type Client struct {
+// ClusterClient keeps the client in sync with the leader.
+type ClusterClient struct {
 	sync.RWMutex
 	config Config
 
@@ -28,18 +37,18 @@ type Client struct {
 	Screen       *models.Screen
 	Tickers      []*models.Ticker
 	Cluster      *models.ScreenCluster
-	announcement *models.Announcement
+	Announcement *models.Announcement
 }
 
 // New creates a new ticker wall client.
-func New() (*Client, error) {
+func New() (*ClusterClient, error) {
 	// Parse Env Vars:
 	var cfg Config
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
 	}
 
-	obj := &Client{
+	obj := &ClusterClient{
 		config: cfg,
 		Screen: &models.Screen{
 			UUID:   uuid.NewString(),
@@ -53,7 +62,7 @@ func New() (*Client, error) {
 }
 
 // Run starts all of our go routines / listeners.
-func (t *Client) Run(ctx context.Context) error {
+func (t *ClusterClient) Run(ctx context.Context) error {
 	// Create gRPC connection, close when done.
 	if err := t.startGRPCClient(); err != nil {
 		return err
@@ -76,7 +85,7 @@ func (t *Client) Run(ctx context.Context) error {
 	return tomb.Wait()
 }
 
-func (t *Client) joinCluster(ctx context.Context) error {
+func (t *ClusterClient) joinCluster(ctx context.Context) error {
 	updateListener, err := t.client.JoinCluster(ctx, t.Screen)
 	if err != nil {
 		return err
@@ -106,7 +115,7 @@ func (t *Client) joinCluster(ctx context.Context) error {
 	}
 }
 
-func (t *Client) processUpdate(update *models.Update) error {
+func (t *ClusterClient) processUpdate(update *models.Update) error {
 	switch models.UpdateType(update.UpdateType) {
 
 	// Screen cluster has changed.
@@ -143,12 +152,12 @@ func (t *Client) processUpdate(update *models.Update) error {
 }
 
 // Close cleans up our current grpc connection.
-func (t *Client) Close() error {
+func (t *ClusterClient) Close() error {
 	return t.conn.Close()
 }
 
 // startGRPCClient creates a new GRPC client connection.
-func (t *Client) startGRPCClient() error {
+func (t *ClusterClient) startGRPCClient() error {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)))
 
@@ -164,8 +173,8 @@ func (t *Client) startGRPCClient() error {
 	return nil
 }
 
-func (t *Client) updateAnnouncement(announcement *models.Announcement) error {
+func (t *ClusterClient) updateAnnouncement(announcement *models.Announcement) error {
 	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
-	t.announcement = announcement
+	t.Announcement = announcement
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 )
 
 type GUI struct {
-	client *client.Client
+	client client.Client
 
 	// nanov
 	window   *glfw.Window
@@ -28,7 +28,7 @@ type GUI struct {
 	pixelRatio   float32
 }
 
-func NewGUI(client *client.Client) *GUI {
+func NewGUI(client client.Client) *GUI {
 	obj := &GUI{
 		client: client,
 	}
@@ -41,11 +41,14 @@ func (g *GUI) Setup() error {
 		return err
 	}
 
+	// Get our current screen state.
+	screen := g.client.GetScreen()
+
 	// Create a new window.
 	window, err := glfw.CreateWindow(
-		int(g.client.Screen.Width),
-		int(g.client.Screen.Height),
-		fmt.Sprintf("Polygon Ticker Wall %d", g.client.Screen.Index),
+		int(screen.Width),
+		int(screen.Height),
+		fmt.Sprintf("Polygon Ticker Wall %d", screen.Index),
 		nil, nil,
 	)
 	if err != nil {
@@ -79,7 +82,7 @@ func (g *GUI) Setup() error {
 	// Create FPS graph.
 	g.fpsGraph = perfgraph.NewPerfGraph("Frame Time", "sans")
 
-	// Some additional settings.
+	// Some additional settings. Don't really know what these mean, using what nanovgo repo code had.
 	gl.Enable(gl.BLEND)
 	gl.Disable(gl.CULL_FACE)
 	gl.Disable(gl.DEPTH_TEST)
@@ -113,7 +116,7 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 	for !g.window.ShouldClose() {
 		g.fpsGraph.UpdateGraph()
 
-		if g.client.Cluster == nil {
+		if g.client.GetCluster() == nil {
 			// This should be displayed on the app using a new system message method.
 			logrus.Debug("Cluster not ready yet. Waiting on gRPC..")
 			time.Sleep(1 * time.Second)
@@ -153,36 +156,39 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 // visibly. Removing the graph caused a massive memory leak.
 // TODO: Find/Fix the memory leak so we don't always have to display the graph.
 func (g *GUI) renderFPSGraph() {
-	g.client.RLock()
-	defer g.client.RUnlock()
+	settings := g.client.GetSettings()
 
-	if g.client.Cluster.Settings.ShowFPS {
-		g.fpsGraph.RenderGraph(g.nanoCtx, 50, 50)
+	if settings.ShowFPS {
+		g.fpsGraph.RenderGraph(g.nanoCtx, 0, 0)
 	} else {
 		g.fpsGraph.RenderGraph(g.nanoCtx, -50, -50)
 	}
 }
 
+var offset int64
+
 // generateGlobalOffset generates the pixel offset taking into account the scroll speed.
 func (g *GUI) generateGlobalOffset() int64 {
-	g.client.RLock()
-	defer g.client.RUnlock()
+	// settings := g.client.GetSettings()
 
-	return time.Now().UnixNano() / int64(g.client.Cluster.Settings.ScrollSpeed*int32(time.Millisecond))
+	// return time.Now().UnixNano() / int64(settings.ScrollSpeed*int32(time.Millisecond))
+	// return time.Now().UnixNano() / int64(time.Millisecond)
+	offset++
+	return offset
 }
 
+// paintBG sets the background of the window to a solid color.
 func (g *GUI) paintBG() {
-	g.client.RLock()
-	defer g.client.RUnlock()
+	settings := g.client.GetSettings()
 
 	// Set BG color
 	g.nanoCtx.BeginPath()
 	g.nanoCtx.RoundedRect(0, 0, float32(g.windowWidth), float32(g.windowHeight), 0)
 	g.nanoCtx.SetFillColor(nanovgo.RGBA(
-		uint8(g.client.Cluster.Settings.BGColor.Red),
-		uint8(g.client.Cluster.Settings.BGColor.Green),
-		uint8(g.client.Cluster.Settings.BGColor.Blue),
-		uint8(g.client.Cluster.Settings.BGColor.Alpha),
+		uint8(settings.BGColor.Red),
+		uint8(settings.BGColor.Green),
+		uint8(settings.BGColor.Blue),
+		uint8(settings.BGColor.Alpha),
 	))
 	g.nanoCtx.Fill()
 }
