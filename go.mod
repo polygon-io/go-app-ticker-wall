@@ -15,6 +15,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/polygon-io/nanovgo v0.0.0-20210406222537-1c1e04bebee3
+	github.com/rosshemsley/kalman v0.0.0-20190615074247-f4b900823fd1 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect

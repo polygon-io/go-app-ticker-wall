@@ -10,8 +10,8 @@ func (a ScreenSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ScreenSlice) Less(i, j int) bool { return a[i].Index < a[j].Index }
 
 // ScreenGlobalOffset gets the global offset for a given screen UUID in the cluster.
-func (s *ScreenCluster) ScreenGlobalOffset(screenUUID string) int {
-	offset := 0
+func (s *ScreenCluster) ScreenGlobalOffset(screenUUID string) float32 {
+	var offset float32
 	for _, scr := range s.Screens {
 		// This is our screen, do not add our own width.
 		if scr.UUID == screenUUID {
@@ -19,7 +19,7 @@ func (s *ScreenCluster) ScreenGlobalOffset(screenUUID string) int {
 		}
 
 		// Otherwise add this screens offset to the global offset.
-		offset += int(scr.Width)
+		offset += float32(scr.Width)
 	}
 	return offset
 }

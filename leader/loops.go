@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/sirupsen/logrus"
 )
 
 // broadcastPriceUpdatesLoop listens to updates from the DataClient and sends that to all gRPC clients.
@@ -14,6 +15,7 @@ func (t *Leader) broadcastPriceUpdatesLoop(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case priceUpdate := <-t.DataClient.PriceUpdates:
+			logrus.Debug("Price Update: ", priceUpdate.Ticker)
 			t.Updates <- &models.Update{
 				UpdateType:  int32(models.UpdateTypePrice),
 				PriceUpdate: priceUpdate,

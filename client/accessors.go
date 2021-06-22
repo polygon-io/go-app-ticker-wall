@@ -41,3 +41,11 @@ func (t *ClusterClient) GetAnnouncement() *models.Announcement {
 
 	return t.Announcement
 }
+
+// GetStatus returns the clients status.
+func (t *ClusterClient) GetStatus() *Status {
+	t.RLock()
+	defer t.RUnlock()
+
+	return t.Status
+}

@@ -21,6 +21,7 @@ type Client interface {
 	GetCluster() *models.ScreenCluster
 	GetScreen() *models.Screen
 	GetAnnouncement() *models.Announcement
+	GetStatus() *Status
 }
 
 const maxMessageSize = 1024 * 1024 * 1 // 1MB
@@ -38,6 +39,8 @@ type ClusterClient struct {
 	Tickers      []*models.Ticker
 	Cluster      *models.ScreenCluster
 	Announcement *models.Announcement
+
+	Status *Status
 }
 
 // New creates a new ticker wall client.
@@ -50,6 +53,9 @@ func New() (*ClusterClient, error) {
 
 	obj := &ClusterClient{
 		config: cfg,
+		Status: &Status{
+			GRPCStatus: GRPCStatusDisconnected,
+		},
 		Screen: &models.Screen{
 			UUID:   uuid.NewString(),
 			Width:  int32(cfg.ScreenWidth),
@@ -99,8 +105,11 @@ func (t *ClusterClient) joinCluster(ctx context.Context) error {
 				logrus.Info("No more messages from leader.")
 			}
 			logrus.WithError(err).Error("grpc client ending..")
+			t.Status.GRPCStatus = GRPCStatusDisconnected
 			return err
 		}
+
+		t.Status.GRPCStatus = GRPCStatusConnected
 
 		logrus.Info("Got Update: ", update.UpdateType)
 

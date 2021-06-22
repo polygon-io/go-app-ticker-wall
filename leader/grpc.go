@@ -48,7 +48,7 @@ func (t *Leader) JoinCluster(screen *models.Screen, stream models.Leader_JoinClu
 				return nil
 			}
 
-			logrus.WithField("client", client.Screen.UUID).Debug("Sending Client Update")
+			// logrus.WithField("client", client.Screen.UUID).Debug("Sending Client Update")
 			if err := client.Stream.Send(update); err != nil {
 				return err
 			}

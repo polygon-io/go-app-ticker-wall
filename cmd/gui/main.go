@@ -11,8 +11,6 @@ import (
 	tombv2 "gopkg.in/tomb.v2"
 )
 
-const maxMessageSize = 1024 * 1024 * 1 // 1MB
-
 type Config struct {
 	// Service details
 	LogLevel string `split_words:"true" default:"DEBUG"`

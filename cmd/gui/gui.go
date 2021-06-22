@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/goxjs/gl"
@@ -26,12 +27,17 @@ type GUI struct {
 	windowHeight int
 	windowWidth  int
 	pixelRatio   float32
+
+	// logos keeps track of the logos loaded into render context.
+	logos *LogoManager
 }
 
 func NewGUI(client client.Client) *GUI {
 	obj := &GUI{
 		client: client,
+		logos:  NewLogosManager(),
 	}
+
 	return obj
 }
 
@@ -48,7 +54,7 @@ func (g *GUI) Setup() error {
 	window, err := glfw.CreateWindow(
 		int(screen.Width),
 		int(screen.Height),
-		fmt.Sprintf("Polygon Ticker Wall %d", screen.Index),
+		fmt.Sprintf("Polygon Ticker Wall ( INDEX: %d )", screen.Index),
 		nil, nil,
 	)
 	if err != nil {
@@ -91,7 +97,8 @@ func (g *GUI) Setup() error {
 	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	g.nanoCtx.SetTextLineHeight(1.2)
 
-	return nil
+	// Set the logo managers context.
+	return g.logos.Setup(g.nanoCtx)
 }
 
 func (g *GUI) Close() error {
@@ -105,51 +112,67 @@ func (g *GUI) Run(ctx context.Context) error {
 }
 
 func (g *GUI) RenderLoop(ctx context.Context) error {
-	// Load in the company images, and assign to each ticker.
-	// for _, ticker := range mgr.AllTickers() {
-	// 	img := g.nanoCtx.CreateImage("./logos/"+ticker.Ticker.Ticker+".png", 0)
-	// 	g.nanoCtx.CreateImageFromMemory()
-	// 	ticker.Ticker.Img = int32(img)
-	// }
-
 	// This is the main rendering loop. Every frame rendered must run everything in this loop.
 	for !g.window.ShouldClose() {
-		g.fpsGraph.UpdateGraph()
-
-		if g.client.GetCluster() == nil {
-			// This should be displayed on the app using a new system message method.
-			logrus.Debug("Cluster not ready yet. Waiting on gRPC..")
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		// Clear
+		// Get frame ready.
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
 		g.nanoCtx.BeginFrame(g.windowWidth, g.windowHeight, g.pixelRatio)
 
-		globalOffsetTimestamp := g.generateGlobalOffset()
-
-		// Set BG color
-		g.paintBG()
-
-		// Actual application drawing.
-		if err := g.renderTickers(globalOffsetTimestamp); err != nil {
-			return err
+		if err := g.renderFrame(); err != nil {
+			logrus.WithError(err).Error("Could not render frame.")
 		}
 
-		// // If we have an announcement, display it.
-		// if tickerWallClient.announcement != nil {
-		// 	renderSpecialMessage(g.nanoCtx, mgr, t, tickerWallClient.announcement)
-		// }
+		g.endFrame()
 
-		g.renderFPSGraph()
-		g.nanoCtx.EndFrame()
-		gl.Enable(gl.DEPTH_TEST)
-		g.window.SwapBuffers()
-		glfw.PollEvents()
+		g.logos.RenderThread()
 	}
 
 	return ctx.Err()
+}
+
+func (g *GUI) renderFrame() error {
+	// Get the client library status.
+	status := g.client.GetStatus()
+
+	// If we are having issues, display the system dialog panel
+	if status.GRPCStatus != client.GRPCStatusConnected {
+		// We use defer so that we render last, making sure we are displayed on top of all other content.
+		defer func() {
+			g.SystemPanel()
+		}()
+	}
+
+	// Get cluster information.
+	if g.client.GetCluster() == nil {
+		// This should be displayed on the app using a new system message method.
+		logrus.Debug("Cluster not ready yet. Waiting on gRPC..")
+		time.Sleep(1 * time.Second)
+		return nil
+	}
+
+	g.fpsGraph.UpdateGraph()
+
+	globalOffsetTimestamp := g.generateGlobalOffset()
+
+	// Set BG color
+	g.paintBG()
+
+	// Actual application drawing.
+	if err := g.renderTickers(globalOffsetTimestamp); err != nil {
+		return err
+	}
+
+	// TOOD: Render announcement if exists.
+
+	g.renderFPSGraph()
+	return nil
+}
+
+func (g *GUI) endFrame() {
+	g.nanoCtx.EndFrame()
+	gl.Enable(gl.DEPTH_TEST)
+	g.window.SwapBuffers()
+	glfw.PollEvents()
 }
 
 // renderFPSGraph always renders the graph, but this decides if it should be displayed
@@ -166,13 +189,18 @@ func (g *GUI) renderFPSGraph() {
 }
 
 // generateGlobalOffset generates the pixel offset taking into account the scroll speed.
-func (g *GUI) generateGlobalOffset() int64 {
+func (g *GUI) generateGlobalOffset() float32 {
 	settings := g.client.GetSettings()
+	tickers := g.client.GetTickers()
 
-	return time.Now().UnixNano() / int64(settings.ScrollSpeed*int32(time.Millisecond))
-	// return time.Now().UnixNano() / int64(time.Millisecond)
-	// offset++
-	// return offset
+	newGlobalOffset := float64(time.Now().UnixNano()) / float64(int(settings.ScrollSpeed)*int(time.Millisecond))
+
+	tickerBoxWidth := float32(settings.TickerBoxWidth)
+	tapeWidth := float32(float32(len(tickers)) * tickerBoxWidth)
+	baseDivisible := float64(math.Floor(float64(newGlobalOffset) / float64(tapeWidth)))
+	newGlobalOffset = newGlobalOffset - (baseDivisible * float64(tapeWidth))
+
+	return float32(newGlobalOffset)
 }
 
 // paintBG sets the background of the window to a solid color.

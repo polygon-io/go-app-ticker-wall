@@ -1,10 +1,6 @@
 package main
 
 // Some logo image constants.
-const (
-	logoSize              = 180
-	logoPaddingPercentage = 0.3
-)
 
 // func renderSpecialMessage(ctx *nanovgo.Context, mgr tickerManager.TickerManager, globalOffset int64, announcement *models.Announcement) {
 // 	t := int(time.Now().UnixNano() / int64(time.Millisecond))

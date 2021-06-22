@@ -7,22 +7,25 @@ import (
 )
 
 // TickerOffset determines what the offset should be for this ticker, on this screen.
-func (g *GUI) TickerOffset(globalOffset int64, ticker *models.Ticker) int64 {
+// TODO: We should calculate each tickers offset and allow for dynamic width tickers. When
+// 	there is a 4 letter ticker with a 4 digit price, it's much wider than a 2 letter ticker and 2 digit price
+func (g *GUI) TickerOffset(globalOffset float32, ticker *models.Ticker) float32 {
 	// Get necessary parameters.
 	settings := g.client.GetSettings()
 	cluster := g.client.GetCluster()
 	screen := g.client.GetScreen()
 	tickers := g.client.GetTickers()
-
-	tickerBoxWidth := int(settings.TickerBoxWidth)
 	screenGlobalOffset := cluster.ScreenGlobalOffset(screen.UUID)
-	localizedOffset := (globalOffset % int64(len(tickers)*tickerBoxWidth))
-	offset := (int64(int(ticker.Index)*tickerBoxWidth) - localizedOffset) - int64(screenGlobalOffset)
+
+	tickerBoxWidth := float32(settings.TickerBoxWidth)
+	tapeWidth := float32(float32(len(tickers)) * tickerBoxWidth)
+
+	offset := ((float32(ticker.Index) * tickerBoxWidth) - globalOffset) - screenGlobalOffset
 
 	// Too far left, need to wrap it around.
 	if offset < 0 {
-		if offset < -(int64(tickerBoxWidth)) {
-			offset = int64(len(tickers)*tickerBoxWidth) - int64(math.Abs(float64(offset)))
+		if offset < -(float32(tickerBoxWidth)) {
+			offset = tapeWidth - float32(math.Abs(float64(offset)))
 		}
 	}
 
@@ -31,7 +34,7 @@ func (g *GUI) TickerOffset(globalOffset int64, ticker *models.Ticker) int64 {
 
 // DetermineTickersForRender takes a global offset and returns the ticker indices which are
 // within visiable positions ( should be rendered ).
-func (g *GUI) DetermineTickersForRender(globalOffset int64) []*models.Ticker {
+func (g *GUI) DetermineTickersForRender(globalOffset float32) []*models.Ticker {
 	// Get necessary parameters.
 	settings := g.client.GetSettings()
 	cluster := g.client.GetCluster()
@@ -44,11 +47,11 @@ func (g *GUI) DetermineTickersForRender(globalOffset int64) []*models.Ticker {
 	screenGlobalOffset := cluster.ScreenGlobalOffset(screen.UUID)
 
 	// Global offset does not necessarily ever reset, so we need to get the localized offset.
-	localizedOffset := (globalOffset % int64(len(tickers)*int(settings.TickerBoxWidth))) + int64(screenGlobalOffset)
-	// logrus.Trace("Localized Offset: ", localizedOffset)
+	localizedOffset := globalOffset + screenGlobalOffset
+	// // logrus.Trace("Localized Offset: ", localizedOffset)
 
 	firstIndex := int(math.Floor(float64(localizedOffset) / float64(settings.TickerBoxWidth)))
-	lastIndex := int(math.Floor(float64(localizedOffset+int64(g.windowWidth)) / float64(settings.TickerBoxWidth)))
+	lastIndex := int(math.Floor(float64(localizedOffset+float32(g.windowWidth)) / float64(settings.TickerBoxWidth)))
 
 	// eg: -2
 	if firstIndex < 0 {
