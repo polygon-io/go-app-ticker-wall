@@ -20,25 +20,45 @@ type WebsocketTrades []WebsocketTrade
 
 //easyjson:json
 type WebsocketTrade struct {
-	Event  string  `json:"ev"`
-	ID     string  `json:"i"`
-	Price  float64 `json:"p"`
+	Event string  `json:"ev"`
+	ID    string  `json:"i"`
+	Price float64 `json:"p"`
+	// This is a hack. We use the 'high' price if it's an aggregate because trades
+	// also have a 'c' attribute, with a different type, which causes havoc.
+	High   float64 `json:"h"`
 	Ticker string  `json:"sym"`
 }
 
 // AddTickerToUpdates sends a subscribe message to the given tickers.
 func (c *Client) AddTickerToUpdates(tickers []string) error {
-	if err := c.wsClient.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"subscribe","params":"%s"}`, strings.Join(tickers, ",")))); err != nil {
+	// Determine the prefix character.
+	prefix := "A."
+	if c.perTickUpdates {
+		prefix = "T."
+	}
+
+	// Create the correct subscription parameters. ( Trades vs Aggregates ).
+	subItems := make([]string, 0, len(tickers))
+	for _, ticker := range tickers {
+		subItems = append(subItems, prefix+ticker)
+	}
+
+	// Subscribe to updates for these items.
+	subscribeString := fmt.Sprintf(`{"action":"subscribe","params":"%s"}`, strings.Join(subItems, ","))
+	if err := c.wsClient.WriteMessage(websocket.TextMessage, []byte(subscribeString)); err != nil {
 		return fmt.Errorf("unable to send subscription message to websockets: %w", err)
 	}
 
 	return nil
 }
 
-// ListenForTickerUpdates listens for trades on the given tickers. This will get propogated via the client.PriceUpdates channel.
+// ListenForTickerUpdates listens for trades on the given tickers. This will
+// get propogated via the client.PriceUpdates channel.
 func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) error {
 	// Close our update channel when we exit.
 	defer close(c.tickerUpdate)
+
+	logrus.Debug("tickerS: ", len(tickers), tickers)
 
 	wsClient, _, err := websocket.DefaultDialer.DialContext(ctx, "wss://socket.polygon.io/stocks", nil)
 	if err != nil {
@@ -50,11 +70,13 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 	// Set close handler.
 	// TODO: Reconnect when websockets gets disconnected.
 	c.wsClient.SetCloseHandler(func(code int, text string) error {
-		logrus.Debug("Got close message")
+		logrus.Debug("WebSockets closed.")
 		return nil
 	})
 
-	if err := c.wsClient.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"auth","params":"%s"}`, c.APIKey))); err != nil {
+	if err := c.wsClient.WriteMessage(
+		websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"auth","params":"%s"}`, c.APIKey)),
+	); err != nil {
 		return fmt.Errorf("unable to send auth message to websockets: %w", err)
 	}
 
@@ -63,8 +85,8 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 	}
 
 	// Start the actual processing.
-	// Starting a go routing in a library func is not great.
-	// Also, completely ignores the error returned.
+	// Starting a go routing in a library func is not great. Also, completely
+	// ignores the error returned.
 	go c.queueTickerUpdates(ctx)
 	go func() {
 		<-ctx.Done()
@@ -90,6 +112,8 @@ func (c *Client) queueTickerUpdates(ctx context.Context) error {
 	// Close our update channel when we exit.
 	defer close(c.PriceUpdates)
 
+	logrus.Debug("Queue ticker updates")
+
 	appendBytes := []byte(`}`)
 	for {
 		select {
@@ -113,14 +137,19 @@ func (c *Client) queueTickerUpdates(ctx context.Context) error {
 
 			for _, trade := range wsMessage.Messages {
 				// This is NOT a trade message.
-				if trade.Event != "T" {
+				if trade.Event != "T" && trade.Event != "A" {
 					continue
+				}
+
+				price := trade.Price
+				if trade.Event == "A" {
+					price = trade.High
 				}
 
 				// Broadcast this update.
 				c.PriceUpdates <- &models.PriceUpdate{
 					Ticker: trade.Ticker,
-					Price:  trade.Price,
+					Price:  price,
 				}
 			}
 

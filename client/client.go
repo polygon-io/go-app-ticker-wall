@@ -111,8 +111,6 @@ func (t *ClusterClient) joinCluster(ctx context.Context) error {
 
 		t.Status.GRPCStatus = GRPCStatusConnected
 
-		logrus.Info("Got Update: ", update.UpdateType)
-
 		if update == nil {
 			logrus.Warning("Update message empty...")
 			continue

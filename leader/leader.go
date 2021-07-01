@@ -66,7 +66,7 @@ func New() (*Leader, error) {
 	}
 
 	// Create new Polygon API Client.
-	obj.DataClient = polygon.NewClient(cfg.APIKey)
+	obj.DataClient = polygon.NewClient(cfg.APIKey, cfg.Presentation.PerTickUpdates)
 
 	return obj, nil
 }
@@ -95,6 +95,7 @@ func (t *Leader) Run(ctx context.Context) error {
 
 	// Start the DataClient socket stream.
 	tomb.Go(func() error {
+		logrus.Debug("Starting WebSocket Listener..")
 		return t.DataClient.ListenForTickerUpdates(ctx, t.getTickerSymbols())
 	})
 

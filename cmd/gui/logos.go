@@ -160,3 +160,20 @@ func (l *LogoManager) Setup(nanoCtx *nanovgo.Context) error {
 	l.nanoCtx = nanoCtx
 	return nil
 }
+
+// renderTickerLogo renders the tickers logo at the given offset & size.
+func (g *GUI) renderTickerLogo(offset, logoSize float32, ticker *models.Ticker) error {
+	tickerImg := g.logos.GetTickerImage(ticker)
+	if tickerImg == nil {
+		return nil
+	}
+
+	// Paint the logo
+	imgPaint := nanovgo.ImagePattern(offset, 182.5, logoSize, logoSize, 0.0/180.0*nanovgo.PI, int(tickerImg.NanovImgID), 1)
+	g.nanoCtx.BeginPath()
+	g.nanoCtx.RoundedRect(offset, 182.5, logoSize, logoSize, 5)
+	g.nanoCtx.SetFillPaint(imgPaint)
+	g.nanoCtx.Fill()
+
+	return nil
+}

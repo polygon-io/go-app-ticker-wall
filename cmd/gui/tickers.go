@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
@@ -65,6 +64,7 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	offsetLeft := (tickerOffset + (tickerBoxMargin / 2)) + tickerBoxPadding
 	offsetTop := float32((screen.Height / 2) - (tickerBoxHeight / 2))
 	offsetRight := ((tickerOffset + float32(settings.TickerBoxWidth)) - tickerBoxMargin) - tickerBoxPadding
+
 	// Calculate the Y offset for the two rows. Using percentages so if we change
 	// ticker box size, it should scale accordingly.
 	upperRowTopOffset := offsetTop + (tickerBoxHeight * .33)
@@ -79,6 +79,11 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	g.nanoCtx.SetFillColor(settings.FontColor.ToNanov())
 	g.nanoCtx.TextBox(offsetLeft, float32(upperRowTopOffset), 900, ticker.Ticker)
 
+	// Price.
+	textString := fmt.Sprintf("%.2f", ticker.Price)
+	boundedTextWidth, _ := g.nanoCtx.TextBounds(0, 0, textString)
+	g.nanoCtx.Text(offsetRight-boundedTextWidth, upperRowTopOffset, textString)
+
 	// Company Name.
 	g.nanoCtx.SetFontSize(bottomRowFontSize)
 	g.nanoCtx.SetFontFace("sans-light")
@@ -88,13 +93,6 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	}
 	g.nanoCtx.TextBox(offsetLeft, float32(lowerRowTopOffset), 900, companyName)
 
-	// Price.
-	g.nanoCtx.SetFontSize(upperRowFontSize)
-	g.nanoCtx.SetFontFace("sans-bold")
-	textString := fmt.Sprintf("%.2f", ticker.Price)
-	boundedText, _ := g.nanoCtx.TextBounds(0, 0, textString)
-	g.nanoCtx.Text(offsetRight-boundedText, upperRowTopOffset, textString)
-
 	// Percentage Gained / Loss test.
 	directionalColor := settings.UpColor
 	if ticker.PriceChangePercentage < 0 {
@@ -102,35 +100,12 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	}
 	priceDifference := ticker.PreviousClosePrice - ticker.Price
 	g.nanoCtx.SetFillColor(directionalColor.ToNanov())
-	g.nanoCtx.SetFontSize(bottomRowFontSize)
-	g.nanoCtx.SetFontFace("sans-light")
 	textString = fmt.Sprintf("%+.2f (%+.2f%%)", priceDifference, ticker.PriceChangePercentage)
-	boundedText, _ = g.nanoCtx.TextBounds(0, 0, textString)
-	g.nanoCtx.Text(offsetRight-boundedText, lowerRowTopOffset, textString)
+	boundedTextWidth, _ = g.nanoCtx.TextBounds(0, 0, textString)
+	g.nanoCtx.Text(offsetRight-boundedTextWidth, lowerRowTopOffset, textString)
 
 	// Graph.
 	g.renderGraph(offsetLeft+400, 63, graphSize)
-
-	// Render the logo if enabled.
-	// if settings.ShowLogos {
-	// 	g.renderTickerLogo(leftTextOffset+2, miniLogoSize, ticker)
-	// }
-
-	return nil
-}
-
-func (g *GUI) renderTickerLogo(offset, logoSize float32, ticker *models.Ticker) error {
-	tickerImg := g.logos.GetTickerImage(ticker)
-	if tickerImg == nil {
-		return nil
-	}
-
-	// Paint the logo
-	imgPaint := nanovgo.ImagePattern(offset, 182.5, logoSize, logoSize, 0.0/180.0*nanovgo.PI, int(tickerImg.NanovImgID), 1)
-	g.nanoCtx.BeginPath()
-	g.nanoCtx.RoundedRect(offset, 182.5, logoSize, logoSize, 5)
-	g.nanoCtx.SetFillPaint(imgPaint)
-	g.nanoCtx.Fill()
 
 	return nil
 }
@@ -139,20 +114,13 @@ func (g *GUI) renderGraph(x, y, width float32) {
 	g.drawGraph(g.nanoCtx, x, y, width, width, 2)
 }
 
-func cosF(a float32) float32 {
-	return float32(math.Cos(float64(a)))
-}
-func sinF(a float32) float32 {
-	return float32(math.Sin(float64(a)))
-}
-
 func (g *GUI) drawGraph(ctx *nanovgo.Context, x, y, w, h, t float32) {
 	settings := g.client.GetSettings()
 
 	// green := settings.UpColor.ToNanov()
 	red := settings.DownColor.ToNanov()
 
-	const points = 12
+	const points = 20
 	var sx, sy [points]float32
 	dx := w / (points - 1)
 
@@ -190,10 +158,11 @@ func (g *GUI) drawGraph(ctx *nanovgo.Context, x, y, w, h, t float32) {
 	ctx.BeginPath()
 	ctx.MoveTo(sx[0], sy[0])
 	for i := 1; i < points; i++ {
-		ctx.BezierTo(sx[i-1]+dx*0.5, sy[i-1], sx[i]-dx*0.5, sy[i], sx[i], sy[i])
+		// ctx.BezierTo(sx[i-1]+dx*0.5, sy[i-1], sx[i]-dx*0.5, sy[i], sx[i], sy[i])
+		ctx.LineTo(sx[i], sy[i])
 	}
 	ctx.SetStrokeColor(red)
-	ctx.SetStrokeWidth(2.0)
+	ctx.SetStrokeWidth(4.0)
 	ctx.Stroke()
 
 	ctx.BeginPath()
