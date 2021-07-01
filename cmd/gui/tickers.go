@@ -24,53 +24,101 @@ const (
 	miniLogoSize    = 64
 	miniLogoPadding = 10
 	paddingSize     = 20
+
+	// Ticker box settings
+	tickerBoxHeight       = 240
+	tickerBoxMargin       = 30
+	tickerBoxPadding      = 50
+	tickerBoxBorderRadius = 8
+
+	// Font sizes
+	upperRowFontSize  = 96
+	bottomRowFontSize = 58
+
+	maxCompanyNameCharacters = 14
 )
+
+// renderTickerBg sets the background of the ticker box to a solid color.
+func (g *GUI) renderTickerBg(leftOffset float32) {
+	screen := g.client.GetScreen()
+	settings := g.client.GetSettings()
+
+	topOffset := float32((screen.Height / 2) - (tickerBoxHeight / 2))
+	leftOffset = leftOffset + (tickerBoxMargin / 2)
+	boxWidth := float32(settings.TickerBoxWidth) - tickerBoxMargin
+
+	// Set BG color
+	g.nanoCtx.BeginPath()
+	g.nanoCtx.RoundedRect(leftOffset, topOffset, boxWidth, tickerBoxHeight, tickerBoxBorderRadius)
+	g.nanoCtx.SetFillColor(settings.TickerBoxBGColor.ToNanov())
+	g.nanoCtx.Fill()
+}
 
 func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	// Get necessary parameters.
 	settings := g.client.GetSettings()
-
-	g.nanoCtx.SetFontFace("sans-bold")
-	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
-	g.nanoCtx.SetTextLineHeight(1.2)
-	g.nanoCtx.SetFontSize(156.0)
-
-	// Green or red.
-	var rgbaColor nanovgo.Color
-	rgbaColor = settings.UpColor.ToNanov()
-	if ticker.PriceChangePercentage < 0 {
-		rgbaColor = settings.DownColor.ToNanov()
-	}
-
-	// Set this tickers font color
-	g.nanoCtx.SetFillColor(rgbaColor)
+	screen := g.client.GetScreen()
 
 	tickerOffset := g.TickerOffset(globalOffset, ticker)
+	g.renderTickerBg(tickerOffset)
+
+	g.nanoCtx.SetFontFace("sans-bold")
+	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignMiddle)
+	g.nanoCtx.SetFontSize(upperRowFontSize)
+	g.nanoCtx.SetFillColor(settings.FontColor.ToNanov())
+
+	// Add padding to our offset.
+	offsetLeft := (tickerOffset + (tickerBoxMargin / 2))
+	offsetTop := float32((screen.Height / 2) - (tickerBoxHeight / 2))
+	offsetRight := ((tickerOffset + float32(settings.TickerBoxWidth)) - tickerBoxMargin) - tickerBoxPadding
+
+	// Calculate the Y offset for the two rows. Using percentages so if we change ticker box size, it should scale accordingly.
+	upperRowTopOffset := offsetTop + (tickerBoxHeight * .33)
+	lowerRowTopOffset := offsetTop + (tickerBoxHeight * .66)
 
 	// Calculate all the sub item offsets.
-	mainTextOffset := tickerOffset + graphSize + (paddingSize * 2)
-	subTextOffset := tickerOffset + graphSize + (paddingSize * 2)
-	if settings.ShowLogos {
-		subTextOffset += miniLogoSize + paddingSize
-	}
+	leftTextOffset := offsetLeft + tickerBoxPadding
 
-	// Main text content.
-	g.nanoCtx.TextBox(mainTextOffset, 30, 900, ticker.Ticker+" $"+fmt.Sprintf("%.2f", ticker.Price))
+	// Actual text rendering ---
 
-	// Sub text.
-	diff := ticker.PreviousClosePrice - ticker.Price
-	g.nanoCtx.SetFontSize(56)
+	// Ticker & Company Name
+	g.nanoCtx.TextBox(leftTextOffset, float32(upperRowTopOffset), 900, ticker.Ticker)
+	g.nanoCtx.SetFontSize(bottomRowFontSize)
 	g.nanoCtx.SetFontFace("sans-light")
-	g.nanoCtx.TextBox(subTextOffset, 170, 900, ticker.CompanyName)
-	g.nanoCtx.SetFontSize(32)
-	g.nanoCtx.TextBox(subTextOffset, 220, 900, fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage))
+	companyName := ticker.CompanyName
+	if len(companyName) >= maxCompanyNameCharacters {
+		companyName = companyName[:(maxCompanyNameCharacters-3)] + "..."
+	}
+	g.nanoCtx.TextBox(leftTextOffset, float32(lowerRowTopOffset), 900, companyName)
 
-	g.renderGraph(tickerOffset, 63, graphSize)
+	// Price
+	g.nanoCtx.SetFontSize(upperRowFontSize)
+	g.nanoCtx.SetFontFace("sans-bold")
+	textString := fmt.Sprintf("%.2f", ticker.Price)
+	boundedText, _ := g.nanoCtx.TextBounds(0, 0, textString)
+	rightTextOffset := offsetRight - boundedText
+	g.nanoCtx.Text(rightTextOffset, upperRowTopOffset, textString)
+
+	// Percentage Gained / Loss test.
+	directionalColor := settings.UpColor
+	if ticker.PriceChangePercentage < 0 {
+		directionalColor = settings.DownColor
+	}
+	diff := ticker.PreviousClosePrice - ticker.Price
+	g.nanoCtx.SetFillColor(directionalColor.ToNanov())
+	g.nanoCtx.SetFontSize(bottomRowFontSize)
+	g.nanoCtx.SetFontFace("sans-light")
+	textString = fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage)
+	boundedText, _ = g.nanoCtx.TextBounds(0, 0, textString)
+	rightTextOffset = offsetRight - boundedText
+	g.nanoCtx.Text(rightTextOffset, lowerRowTopOffset, textString)
+
+	g.renderGraph(leftTextOffset+400, 63, graphSize)
 
 	// Render the logo if enabled.
-	if settings.ShowLogos {
-		g.renderTickerLogo(mainTextOffset+2, miniLogoSize, ticker)
-	}
+	// if settings.ShowLogos {
+	// 	g.renderTickerLogo(leftTextOffset+2, miniLogoSize, ticker)
+	// }
 
 	return nil
 }
