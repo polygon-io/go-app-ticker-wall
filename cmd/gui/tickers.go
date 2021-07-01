@@ -20,10 +20,8 @@ func (g *GUI) renderTickers(globalOffset float32) error {
 }
 
 const (
-	graphSize       = 180
-	miniLogoSize    = 64
-	miniLogoPadding = 10
-	paddingSize     = 20
+	graphSize    = 180
+	miniLogoSize = 64
 
 	// Ticker box settings
 	tickerBoxHeight       = 240
@@ -58,62 +56,60 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	// Get necessary parameters.
 	settings := g.client.GetSettings()
 	screen := g.client.GetScreen()
-
 	tickerOffset := g.TickerOffset(globalOffset, ticker)
+
+	// Render background rectangle.
 	g.renderTickerBg(tickerOffset)
 
+	// Calculate offsets.
+	offsetLeft := (tickerOffset + (tickerBoxMargin / 2)) + tickerBoxPadding
+	offsetTop := float32((screen.Height / 2) - (tickerBoxHeight / 2))
+	offsetRight := ((tickerOffset + float32(settings.TickerBoxWidth)) - tickerBoxMargin) - tickerBoxPadding
+	// Calculate the Y offset for the two rows. Using percentages so if we change
+	// ticker box size, it should scale accordingly.
+	upperRowTopOffset := offsetTop + (tickerBoxHeight * .33)
+	lowerRowTopOffset := offsetTop + (tickerBoxHeight * .66)
+
+	// Actual text rendering ---
+
+	// Ticker.
 	g.nanoCtx.SetFontFace("sans-bold")
 	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignMiddle)
 	g.nanoCtx.SetFontSize(upperRowFontSize)
 	g.nanoCtx.SetFillColor(settings.FontColor.ToNanov())
+	g.nanoCtx.TextBox(offsetLeft, float32(upperRowTopOffset), 900, ticker.Ticker)
 
-	// Add padding to our offset.
-	offsetLeft := (tickerOffset + (tickerBoxMargin / 2))
-	offsetTop := float32((screen.Height / 2) - (tickerBoxHeight / 2))
-	offsetRight := ((tickerOffset + float32(settings.TickerBoxWidth)) - tickerBoxMargin) - tickerBoxPadding
-
-	// Calculate the Y offset for the two rows. Using percentages so if we change ticker box size, it should scale accordingly.
-	upperRowTopOffset := offsetTop + (tickerBoxHeight * .33)
-	lowerRowTopOffset := offsetTop + (tickerBoxHeight * .66)
-
-	// Calculate all the sub item offsets.
-	leftTextOffset := offsetLeft + tickerBoxPadding
-
-	// Actual text rendering ---
-
-	// Ticker & Company Name
-	g.nanoCtx.TextBox(leftTextOffset, float32(upperRowTopOffset), 900, ticker.Ticker)
+	// Company Name.
 	g.nanoCtx.SetFontSize(bottomRowFontSize)
 	g.nanoCtx.SetFontFace("sans-light")
 	companyName := ticker.CompanyName
 	if len(companyName) >= maxCompanyNameCharacters {
 		companyName = companyName[:(maxCompanyNameCharacters-3)] + "..."
 	}
-	g.nanoCtx.TextBox(leftTextOffset, float32(lowerRowTopOffset), 900, companyName)
+	g.nanoCtx.TextBox(offsetLeft, float32(lowerRowTopOffset), 900, companyName)
 
-	// Price
+	// Price.
 	g.nanoCtx.SetFontSize(upperRowFontSize)
 	g.nanoCtx.SetFontFace("sans-bold")
 	textString := fmt.Sprintf("%.2f", ticker.Price)
 	boundedText, _ := g.nanoCtx.TextBounds(0, 0, textString)
-	rightTextOffset := offsetRight - boundedText
-	g.nanoCtx.Text(rightTextOffset, upperRowTopOffset, textString)
+	g.nanoCtx.Text(offsetRight-boundedText, upperRowTopOffset, textString)
 
 	// Percentage Gained / Loss test.
 	directionalColor := settings.UpColor
 	if ticker.PriceChangePercentage < 0 {
 		directionalColor = settings.DownColor
 	}
-	diff := ticker.PreviousClosePrice - ticker.Price
+	priceDifference := ticker.PreviousClosePrice - ticker.Price
 	g.nanoCtx.SetFillColor(directionalColor.ToNanov())
 	g.nanoCtx.SetFontSize(bottomRowFontSize)
 	g.nanoCtx.SetFontFace("sans-light")
-	textString = fmt.Sprintf("%+.2f (%+.2f%%)", diff, ticker.PriceChangePercentage)
+	textString = fmt.Sprintf("%+.2f (%+.2f%%)", priceDifference, ticker.PriceChangePercentage)
 	boundedText, _ = g.nanoCtx.TextBounds(0, 0, textString)
-	rightTextOffset = offsetRight - boundedText
-	g.nanoCtx.Text(rightTextOffset, lowerRowTopOffset, textString)
+	g.nanoCtx.Text(offsetRight-boundedText, lowerRowTopOffset, textString)
 
-	g.renderGraph(leftTextOffset+400, 63, graphSize)
+	// Graph.
+	g.renderGraph(offsetLeft+400, 63, graphSize)
 
 	// Render the logo if enabled.
 	// if settings.ShowLogos {
