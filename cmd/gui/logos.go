@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 type LogoManager struct {
@@ -36,6 +38,7 @@ type Logo struct {
 type logoStatus int
 
 const (
+	// nolint:varcheck,deadcode // This will be used in the future.
 	logoStatusMissing     logoStatus = 0
 	logoStatusDownloading logoStatus = 1
 	logoStatusError       logoStatus = 2
@@ -59,9 +62,19 @@ func (l *LogoManager) DownloadLogo(ticker *models.Ticker) error {
 		return l.DownloadLogo(ticker)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	// Download URL for logos. ( Deprecated, this will not work for newer ticker symbols ).
+	// nolint:gosec // We are constructing this URL ourselves, it's OK.
 	url := "https://s3.polygon.io/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
-	response, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	client := http.DefaultClient
+	response, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -132,7 +145,11 @@ func (l *LogoManager) GetTickerImage(ticker *models.Ticker) *Logo {
 		}
 
 		// Start the actual download in new go routine.
-		go l.DownloadLogo(ticker)
+		go func() {
+			if err := l.DownloadLogo(ticker); err != nil {
+				logrus.WithError(err).Warn("Download Ticker Logo Failed.")
+			}
+		}()
 
 		return nil
 	}
@@ -142,15 +159,11 @@ func (l *LogoManager) GetTickerImage(ticker *models.Ticker) *Logo {
 		return tickerLogo
 	}
 
-	if tickerLogo.Status == logoStatusDownloading {
-		// Return download image.
-
-	}
-
-	if tickerLogo.Status == logoStatusError {
+	// nolint:staticcheck // Not sure what I want to do with these yet. Keeping for time being.
+	if tickerLogo.Status == logoStatusDownloading || tickerLogo.Status == logoStatusError {
 		// Return error image.
-
 	}
+
 	return nil
 }
 
@@ -162,18 +175,17 @@ func (l *LogoManager) Setup(nanoCtx *nanovgo.Context) error {
 }
 
 // renderTickerLogo renders the tickers logo at the given offset & size.
-func (g *GUI) renderTickerLogo(offset, logoSize float32, ticker *models.Ticker) error {
+// nolint:unused // Keeping this here incase we want to add logos back.
+func (g *GUI) renderTickerLogo(offset, logoSize float32, ticker *models.Ticker) {
 	tickerImg := g.logos.GetTickerImage(ticker)
 	if tickerImg == nil {
-		return nil
+		return
 	}
 
 	// Paint the logo
-	imgPaint := nanovgo.ImagePattern(offset, 182.5, logoSize, logoSize, 0.0/180.0*nanovgo.PI, int(tickerImg.NanovImgID), 1)
+	imgPaint := nanovgo.ImagePattern(offset, 182.5, logoSize, logoSize, 0.0/180.0*nanovgo.PI, tickerImg.NanovImgID, 1)
 	g.nanoCtx.BeginPath()
 	g.nanoCtx.RoundedRect(offset, 182.5, logoSize, logoSize, 5)
 	g.nanoCtx.SetFillPaint(imgPaint)
 	g.nanoCtx.Fill()
-
-	return nil
 }

@@ -65,6 +65,8 @@ func run() error {
 		select {
 		case <-sigs:
 			tomb.Kill(nil)
+		case <-tomb.Dying():
+			// Exit.
 		}
 		return nil
 	})

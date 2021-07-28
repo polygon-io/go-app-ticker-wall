@@ -32,9 +32,9 @@ type GUI struct {
 	logos *LogoManager
 }
 
-func NewGUI(client client.Client) *GUI {
+func NewGUI(clientObj client.Client) *GUI {
 	obj := &GUI{
-		client: client,
+		client: clientObj,
 		logos:  NewLogosManager(),
 	}
 
@@ -101,6 +101,8 @@ func (g *GUI) Setup() error {
 	return g.logos.Setup(g.nanoCtx)
 }
 
+// Close shuts down the GUI.
+// nolint:unparam // We want to match the io.Closer interface.
 func (g *GUI) Close() error {
 	g.nanoCtx.Delete()
 	glfw.Terminate()
@@ -162,7 +164,7 @@ func (g *GUI) renderFrame() error {
 		return err
 	}
 
-	// TOOD: Render announcement if exists.
+	// TODO: Render announcement if exists.
 
 	g.renderFPSGraph()
 	return nil
@@ -196,9 +198,9 @@ func (g *GUI) generateGlobalOffset() float32 {
 	newGlobalOffset := float64(time.Now().UnixNano()) / float64(int(settings.ScrollSpeed)*int(time.Millisecond))
 
 	tickerBoxWidth := float32(settings.TickerBoxWidth)
-	tapeWidth := float32(float32(len(tickers)) * tickerBoxWidth)
-	baseDivisible := float64(math.Floor(float64(newGlobalOffset) / float64(tapeWidth)))
-	newGlobalOffset = newGlobalOffset - (baseDivisible * float64(tapeWidth))
+	tapeWidth := float32(len(tickers)) * tickerBoxWidth
+	baseDivisible := math.Floor(newGlobalOffset / float64(tapeWidth))
+	newGlobalOffset -= baseDivisible * float64(tapeWidth)
 
 	return float32(newGlobalOffset)
 }

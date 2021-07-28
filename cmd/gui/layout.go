@@ -18,13 +18,13 @@ func (g *GUI) TickerOffset(globalOffset float32, ticker *models.Ticker) float32 
 	screenGlobalOffset := cluster.ScreenGlobalOffset(screen.UUID)
 
 	tickerBoxWidth := float32(settings.TickerBoxWidth)
-	tapeWidth := float32(float32(len(tickers)) * tickerBoxWidth)
+	tapeWidth := float32(len(tickers)) * tickerBoxWidth
 
 	offset := ((float32(ticker.Index) * tickerBoxWidth) - globalOffset) - screenGlobalOffset
 
 	// Too far left, need to wrap it around.
 	if offset < 0 {
-		if offset < -(float32(tickerBoxWidth)) {
+		if offset < -tickerBoxWidth {
 			offset = tapeWidth - float32(math.Abs(float64(offset)))
 		}
 	}

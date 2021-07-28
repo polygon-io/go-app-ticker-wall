@@ -29,7 +29,7 @@ type PreviousClose struct {
 	Results []*Aggregate `json:"results"`
 }
 
-// LastTrade is the last trade that has occured for this ticker.
+// LastTrade is the last trade that has occurred for this ticker.
 type LastTrade struct {
 	APIResponse
 	Results Trade `json:"results"`

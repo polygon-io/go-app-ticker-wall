@@ -2,7 +2,6 @@ package polygon
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -11,15 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type polygonWrapper struct {
-	Messages []WebsocketTrade `json:"e"`
-}
+//easyjson:json
+type websocketTrades []websocketTrade
 
 //easyjson:json
-type WebsocketTrades []WebsocketTrade
-
-//easyjson:json
-type WebsocketTrade struct {
+type websocketTrade struct {
 	Event string  `json:"ev"`
 	ID    string  `json:"i"`
 	Price float64 `json:"p"`
@@ -87,11 +82,15 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 	// Start the actual processing.
 	// Starting a go routing in a library func is not great. Also, completely
 	// ignores the error returned.
-	go c.queueTickerUpdates(ctx)
+	go func() {
+		if err := c.queueTickerUpdates(ctx); err != nil {
+			logrus.WithError(err).Error("Unable to queue ticker update.")
+		}
+	}()
 	go func() {
 		<-ctx.Done()
 		logrus.Debug("Context closed, ending WS connection.")
-		c.wsClient.Close()
+		_ = c.wsClient.Close()
 	}()
 
 	// As little logic as possible in the reader loop:
@@ -111,10 +110,8 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 func (c *Client) queueTickerUpdates(ctx context.Context) error {
 	// Close our update channel when we exit.
 	defer close(c.PriceUpdates)
-
 	logrus.Debug("Queue ticker updates")
 
-	appendBytes := []byte(`}`)
 	for {
 		select {
 		case <-ctx.Done():
@@ -124,35 +121,39 @@ func (c *Client) queueTickerUpdates(ctx context.Context) error {
 				return nil
 			}
 
-			wsMessage := &polygonWrapper{}
-
-			// holy shit this is hackey, we MUST fix this.
-			wsMessageWrapped := []byte(`{"e":`)
-			wsMessageWrapped = append(wsMessageWrapped, msgBytes...)
-			wsMessageWrapped = append(wsMessageWrapped, appendBytes...)
-
-			if err := json.Unmarshal(wsMessageWrapped, wsMessage); err != nil {
-				return fmt.Errorf("could not unmarshal json from server: %w", err)
+			// Actually process
+			if err := c.processWebsocketEvent(msgBytes); err != nil {
+				return err
 			}
-
-			for _, trade := range wsMessage.Messages {
-				// This is NOT a trade message.
-				if trade.Event != "T" && trade.Event != "A" {
-					continue
-				}
-
-				price := trade.Price
-				if trade.Event == "A" {
-					price = trade.High
-				}
-
-				// Broadcast this update.
-				c.PriceUpdates <- &models.PriceUpdate{
-					Ticker: trade.Ticker,
-					Price:  price,
-				}
-			}
-
 		}
 	}
+}
+
+func (c *Client) processWebsocketEvent(msgBytes []byte) error {
+	// Unmarshal the WebSocket message.
+	trades := websocketTrades{}
+	if err := trades.UnmarshalJSON(msgBytes); err != nil {
+		return fmt.Errorf("could not unmarshal json from server: %w", err)
+	}
+
+	// Each message contains multiple events inside of it.
+	for _, trade := range trades {
+		// This is NOT a trade message, skip.
+		if trade.Event != "T" && trade.Event != "A" {
+			continue
+		}
+
+		price := trade.Price
+		if trade.Event == "A" {
+			price = trade.High
+		}
+
+		// Broadcast this update.
+		c.PriceUpdates <- &models.PriceUpdate{
+			Ticker: trade.Ticker,
+			Price:  price,
+		}
+	}
+
+	return nil
 }

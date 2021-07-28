@@ -123,36 +123,34 @@ func (t *ClusterClient) joinCluster(ctx context.Context) error {
 }
 
 func (t *ClusterClient) processUpdate(update *models.Update) error {
+	var err error
 	switch models.UpdateType(update.UpdateType) {
-
 	// Screen cluster has changed.
 	case models.UpdateTypeCluster:
 		t.updateScreenCluster(update.ScreenCluster)
 
 	// Ticker added.
 	case models.UpdateTypeTickerAdded:
-		if err := t.tickerAdded(update.Ticker); err != nil {
-			return err
-		}
+		err = t.tickerAdded(update.Ticker)
 
 	// Ticker removed.
 	case models.UpdateTypeTickerRemoved:
-		if err := t.tickerRemoved(update.Ticker); err != nil {
-			return err
-		}
+		err = t.tickerRemoved(update.Ticker)
 
 	// Price of a ticker updated.
 	case models.UpdateTypePrice:
-		if err := t.tickerPriceUpdate(update.PriceUpdate); err != nil {
-			return err
-		}
+		err = t.tickerPriceUpdate(update.PriceUpdate)
 
 	// We have a new announcement.
 	case models.UpdateTypeAnnouncement:
-		t.updateAnnouncement(update.Announcement)
+		err = t.updateAnnouncement(update.Announcement)
 
 	default:
 		logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
+	}
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -180,6 +178,7 @@ func (t *ClusterClient) startGRPCClient() error {
 	return nil
 }
 
+// nolint:unparam // This will become more complex in later PR.
 func (t *ClusterClient) updateAnnouncement(announcement *models.Announcement) error {
 	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
 	t.Announcement = announcement

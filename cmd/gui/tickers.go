@@ -10,25 +10,22 @@ import (
 func (g *GUI) renderTickers(globalOffset float32) error {
 	tickers := g.DetermineTickersForRender(globalOffset)
 	for _, ticker := range tickers {
-		if err := g.renderTicker(ticker, globalOffset); err != nil {
-			return fmt.Errorf("could not render ticker: %w", err)
-		}
+		g.renderTicker(ticker, globalOffset)
 	}
 
 	return nil
 }
 
 const (
-	graphSize    = 180
-	miniLogoSize = 64
+	graphSize = 180
 
-	// Ticker box settings
+	// Ticker box settings.
 	tickerBoxHeight       = 240
 	tickerBoxMargin       = 30
 	tickerBoxPadding      = 50
 	tickerBoxBorderRadius = 8
 
-	// Font sizes
+	// Font sizes.
 	upperRowFontSize  = 96
 	bottomRowFontSize = 58
 
@@ -41,7 +38,7 @@ func (g *GUI) renderTickerBg(leftOffset float32) {
 	settings := g.client.GetSettings()
 
 	topOffset := float32((screen.Height / 2) - (tickerBoxHeight / 2))
-	leftOffset = leftOffset + (tickerBoxMargin / 2)
+	leftOffset += (tickerBoxMargin / 2)
 	boxWidth := float32(settings.TickerBoxWidth) - tickerBoxMargin
 
 	// Set BG color
@@ -51,7 +48,7 @@ func (g *GUI) renderTickerBg(leftOffset float32) {
 	g.nanoCtx.Fill()
 }
 
-func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
+func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) {
 	// Get necessary parameters.
 	settings := g.client.GetSettings()
 	screen := g.client.GetScreen()
@@ -77,7 +74,7 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignMiddle)
 	g.nanoCtx.SetFontSize(upperRowFontSize)
 	g.nanoCtx.SetFillColor(settings.FontColor.ToNanov())
-	g.nanoCtx.TextBox(offsetLeft, float32(upperRowTopOffset), 900, ticker.Ticker)
+	g.nanoCtx.TextBox(offsetLeft, upperRowTopOffset, 900, ticker.Ticker)
 
 	// Price.
 	textString := fmt.Sprintf("%.2f", ticker.Price)
@@ -91,7 +88,7 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 	if len(companyName) >= maxCompanyNameCharacters {
 		companyName = companyName[:(maxCompanyNameCharacters-3)] + "..."
 	}
-	g.nanoCtx.TextBox(offsetLeft, float32(lowerRowTopOffset), 900, companyName)
+	g.nanoCtx.TextBox(offsetLeft, lowerRowTopOffset, 900, companyName)
 
 	// Percentage Gained / Loss test.
 	directionalColor := settings.UpColor
@@ -106,8 +103,6 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) error {
 
 	// Graph.
 	g.renderGraph(offsetLeft+400, 63, graphSize)
-
-	return nil
 }
 
 func (g *GUI) renderGraph(x, y, width float32) {

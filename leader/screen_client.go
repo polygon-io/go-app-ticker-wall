@@ -31,7 +31,7 @@ func (t *Leader) CurrentScreenCluster() *models.ScreenCluster {
 	return res
 }
 
-func (t *Leader) addScreenToCluster(screenClient *UpdateClient) error {
+func (t *Leader) addScreenToCluster(screenClient *UpdateClient) {
 	// Add the client and sort them (asc).
 	t.Lock()
 	t.Clients = append(t.Clients, screenClient)
@@ -43,8 +43,6 @@ func (t *Leader) addScreenToCluster(screenClient *UpdateClient) error {
 		UpdateType:    int32(models.UpdateTypeCluster),
 		ScreenCluster: t.CurrentScreenCluster(),
 	}
-
-	return nil
 }
 
 func (t *Leader) removeScreenFromCluster(screen *UpdateClient) error {

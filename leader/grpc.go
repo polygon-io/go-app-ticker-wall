@@ -2,7 +2,6 @@ package leader
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
@@ -24,9 +23,7 @@ func (t *Leader) JoinCluster(screen *models.Screen, stream models.Leader_JoinClu
 	}
 
 	// Add new screen client.
-	if err := t.addScreenToCluster(client); err != nil {
-		return fmt.Errorf("unable to add new screen client: %w", err)
-	}
+	t.addScreenToCluster(client)
 
 	logrus.Debug("Screen added")
 

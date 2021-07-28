@@ -30,10 +30,13 @@ func (t *ClusterClient) tickerAdded(ticker *models.Ticker) error {
 	t.Tickers = append(t.Tickers, ticker)
 	t.Unlock()
 
-	t.tickerPriceUpdate(&models.PriceUpdate{
+	err := t.tickerPriceUpdate(&models.PriceUpdate{
 		Ticker: ticker.Ticker,
 		Price:  ticker.Price,
 	})
+	if err != nil {
+		return err
+	}
 
 	t.sortAndTagTickers()
 
@@ -79,7 +82,9 @@ func (t *ClusterClient) LoadTickers(ctx context.Context) error {
 	}
 
 	for _, ticker := range tickers.Tickers {
-		t.tickerAdded(ticker)
+		if err := t.tickerAdded(ticker); err != nil {
+			return err
+		}
 	}
 
 	return nil

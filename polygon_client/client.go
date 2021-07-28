@@ -32,9 +32,9 @@ type Client struct {
 }
 
 // NewClient creates a new polygon API client.
-func NewClient(APIKey string, perTickUpdate bool) *Client {
+func NewClient(apiKey string, perTickUpdate bool) *Client {
 	return &Client{
-		APIKey:         APIKey,
+		APIKey:         apiKey,
 		tickerUpdate:   make(chan []byte, bufferedChannelSize),
 		PriceUpdates:   make(chan *models.PriceUpdate, bufferedChannelSize),
 		perTickUpdates: perTickUpdate,
