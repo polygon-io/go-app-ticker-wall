@@ -87,11 +87,6 @@ func (t *ClusterClient) Run(ctx context.Context) error {
 		return t.joinCluster(ctx)
 	})
 
-	// Load in all ticker data.
-	// tomb.Go(func() error {
-	// 	return t.LoadTickers(ctx)
-	// })
-
 	return tomb.Wait()
 }
 
