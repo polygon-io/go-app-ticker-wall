@@ -2,15 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/imdario/mergo"
+	"github.com/polygon-io/go-app-ticker-wall/leader"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 )
 
-func (t *TickerWallLeader) runHTTPServer(ctx context.Context) error {
+func runHTTPServer(ctx context.Context, port int, leaderObj *leader.Leader) error {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -19,106 +22,90 @@ func (t *TickerWallLeader) runHTTPServer(ctx context.Context) error {
 	})
 
 	// Register routes.
-	r.GET("/v1/screens", t.getScreens)
-	r.POST("/v1/presentation", t.updatePresentation)
-	r.POST("/v1/announcement", t.createAnnouncement)
+	r.GET("/v1/cluster", getCluster(leaderObj))
+	r.POST("/v1/presentation", updatePresentation(leaderObj))
+	r.POST("/v1/announcement", createAnnouncement(leaderObj))
 
 	srv := &http.Server{
-		Addr:    cfg.HTTPPort,
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: r,
 	}
 
 	// Gracefully shutdown the HTTP server when context is closed.
 	go func() {
 		<-ctx.Done()
-		srv.Shutdown(ctx)
+		if err := srv.Shutdown(ctx); err != nil {
+			logrus.WithError(err).Error("Could not shutdown http server.")
+		}
 	}()
 
-	logrus.Info("HTTP Server Listening on: ", t.cfg.HTTPPort)
+	logrus.Info("HTTP Server Listening on: ", port)
 	return srv.ListenAndServe()
 }
 
-func (t *TickerWallLeader) createAnnouncement(c *gin.Context) {
-	var announcement *models.Announcement
-	if err := c.ShouldBindJSON(&announcement); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Set the display time of the announcement to +100 ms from now.
-	startTimer := time.Now().Add(100 * time.Millisecond)
-	announcement.ShowAtTimestamp = startTimer.UnixNano() / int64(time.Millisecond)
-
-	// Tell all screen clients to update.
-	update := &models.Update{
-		UpdateType:   models.UpdateTypeAnnouncement,
-		Accouncement: announcement,
-	}
-	for _, screenClient := range t.ScreenClients {
-		screenClient.Updates <- update
-	}
-
-	c.JSON(200, gin.H{
-		"done":    true,
-		"results": announcement,
-	})
-}
-
-func (t *TickerWallLeader) updatePresentation(c *gin.Context) {
-	// Parse incoming settings.
-	var postScreenCluster *models.ScreenCluster
-	if err := c.ShouldBindJSON(&postScreenCluster); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	logrus.Info("post: ", postScreenCluster)
-
-	hasUpdated := false
-
-	t.Lock()
-
-	// Scroll speed changes.
-	if postScreenCluster.ScrollSpeed != t.clusterConfig.ScrollSpeed && postScreenCluster.ScrollSpeed > 0 {
-		hasUpdated = true
-		t.clusterConfig.ScrollSpeed = postScreenCluster.ScrollSpeed
-	}
-
-	// Ticker box width changes.
-	if postScreenCluster.TickerBoxWidth != t.clusterConfig.TickerBoxWidth {
-		hasUpdated = true
-		t.clusterConfig.TickerBoxWidth = postScreenCluster.TickerBoxWidth
-	}
-
-	t.Unlock()
-
-	if hasUpdated {
-		// Tell all screen clients to update.
-		for _, sc := range t.ScreenClients {
-			if err := t.queueScreenClientUpdate(sc); err != nil {
-				logrus.WithError(err).Error("Unable to send update to screen client.")
-				c.JSON(http.StatusBadRequest, gin.H{"error": "unable to update screen clients."})
-				return
-			}
+func createAnnouncement(leaderObj *leader.Leader) func(*gin.Context) {
+	return func(c *gin.Context) {
+		var announcement *models.Announcement
+		if err := c.ShouldBindJSON(&announcement); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
+
+		// Set the display time of the announcement to +100 ms from now.
+		startTimer := time.Now().Add(100 * time.Millisecond)
+		announcement.ShowAtTimestampMS = startTimer.UnixNano() / int64(time.Millisecond)
+
+		// Tell all screen clients to update.
+		leaderObj.Updates <- &models.Update{
+			UpdateType:   int32(models.UpdateTypeAnnouncement),
+			Announcement: announcement,
+		}
+
+		c.JSON(200, gin.H{
+			"done":    true,
+			"results": announcement,
+		})
 	}
-
-	c.JSON(200, gin.H{
-		"done": true,
-	})
-
 }
 
-func (t *TickerWallLeader) getScreens(c *gin.Context) {
-	t.RLock()
-	defer t.RUnlock()
+func updatePresentation(leaderObj *leader.Leader) func(*gin.Context) {
+	return func(c *gin.Context) {
+		// Parse incoming settings.
+		var presentationSettings *models.PresentationSettings
+		if err := c.ShouldBindJSON(&presentationSettings); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-	var screens []*models.Screen
-	for _, screenClient := range t.ScreenClients {
-		screens = append(screens, screenClient.Screen)
+		logrus.Info("Presentation Settings: ", presentationSettings)
+
+		leaderObj.Lock()
+
+		// Merge the new settings into the current settings. This make is so that updating a presentation setting
+		// doesn't require all settings, you can just update 1 attribute.
+		if err := mergo.MergeWithOverwrite(leaderObj.PresentationSettings, presentationSettings); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		leaderObj.Unlock()
+
+		// Update the cluster
+		leaderObj.Updates <- &models.Update{
+			UpdateType:    int32(models.UpdateTypeCluster),
+			ScreenCluster: leaderObj.CurrentScreenCluster(),
+		}
+
+		c.JSON(200, gin.H{
+			"done": true,
+		})
 	}
+}
 
-	c.JSON(200, gin.H{
-		"cluster": screens,
-	})
+func getCluster(leaderObj *leader.Leader) func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"cluster": leaderObj.CurrentScreenCluster(),
+		})
+	}
 }

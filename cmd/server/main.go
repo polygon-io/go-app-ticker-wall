@@ -3,34 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/polygon-io/go-app-ticker-wall/models"
+	leader "github.com/polygon-io/go-app-ticker-wall/leader"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	tombv2 "gopkg.in/tomb.v2"
 )
 
-var cfg ServiceConfig
-
 type ServiceConfig struct {
-	// Service details
 	LogLevel string `split_words:"true" default:"DEBUG"`
-	GRPCPort string `split_words:"true" default:":6886"`
-	HTTPPort string `split_words:"true" default:":6887"`
-	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA"`
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,FB,NFLX,LPL,AMZN,SNAP,NKE,SBUX,SQ,INTC,IBM"`
-	APIKey     string `split_words:"true" required:"true"` // polygon.io API key.
-
-	// Presentation Settings
-	TickerBoxWidthPx  int `split_words:"true" default:"1300"`
-	ScrollSpeed       int `split_words:"true" default:"16"`
-	AnimationDuration int `split_words:"true" default:"500"`
+	GRPCPort int    `split_words:"true" default:"6886"`
+	HTTPPort int    `split_words:"true" default:"6887"`
 }
 
 func run() error {
@@ -38,6 +24,7 @@ func run() error {
 	tomb, ctx := tombv2.WithContext(context.Background())
 
 	// Parse Env Vars:
+	var cfg ServiceConfig
 	err := envconfig.Process("POLY", &cfg)
 	if err != nil {
 		return err
@@ -51,15 +38,24 @@ func run() error {
 		logrus.SetLevel(l)
 	}
 
-	tickerWall := NewTickerWallLeader(&cfg)
 	// Start the ticker wall leader.
+	clusterLeader, err := leader.New()
+	if err != nil {
+		return fmt.Errorf("could not create cluster leader: %w", err)
+	}
+
 	tomb.Go(func() error {
-		return tickerWall.Run(ctx)
+		return clusterLeader.Run(ctx)
 	})
 
 	// Start the GRPC server.
 	tomb.Go(func() error {
-		return startGRPC(ctx, &cfg, tickerWall)
+		return startGRPC(ctx, cfg.GRPCPort, clusterLeader)
+	})
+
+	// Start the HTTP admin server.
+	tomb.Go(func() error {
+		return runHTTPServer(ctx, cfg.HTTPPort, clusterLeader)
 	})
 
 	// Wait for OS signals:
@@ -70,9 +66,8 @@ func run() error {
 		case <-sigs:
 			tomb.Kill(nil)
 		case <-tomb.Dying():
-
+			// Exit.
 		}
-		logrus.Debug("Tomb dying")
 		return nil
 	})
 
@@ -83,22 +78,5 @@ func main() {
 	if err := run(); err != nil {
 		logrus.WithError(err).Error("Program exiting")
 	}
-}
-
-func startGRPC(ctx context.Context, cfg *ServiceConfig, tickerWallLeader models.TickerWallLeaderServer) error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 6886))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	go func() {
-		<-ctx.Done()
-		logrus.Debug("Closing gRPC server.")
-		grpcServer.Stop()
-	}()
-
-	models.RegisterTickerWallLeaderServer(grpcServer, tickerWallLeader)
-	return grpcServer.Serve(lis)
+	logrus.Info("bye.")
 }

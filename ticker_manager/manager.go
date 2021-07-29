@@ -82,7 +82,7 @@ func (m *DefaultManager) TickerOffset(globalOffset int64, ticker *Ticker) int64 
 
 	localizedOffset := (globalOffset % int64(len(m.Tickers)*m.PresentationData.TickerBoxWidth))
 
-	offset := (int64(int(ticker.Index)*m.PresentationData.TickerBoxWidth) - localizedOffset) - int64(m.PresentationData.ScreenGlobalOffset)
+	offset := (int64(int(ticker.Index)*m.PresentationData.TickerBoxWidth) - localizedOffset) - m.PresentationData.ScreenGlobalOffset
 	// Too far left, probably need to wrap it around.
 	if offset < 0 {
 		if offset < -(int64(m.PresentationData.TickerBoxWidth)) {
