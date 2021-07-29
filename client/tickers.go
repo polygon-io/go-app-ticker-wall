@@ -27,7 +27,22 @@ func (t *ClusterClient) tickerPriceUpdate(update *models.PriceUpdate) error {
 // tickerAdded handles adding a ticker to our local state.
 func (t *ClusterClient) tickerAdded(ticker *models.Ticker) error {
 	t.Lock()
-	t.Tickers = append(t.Tickers, ticker)
+
+	// Try to update what we have, if we have it.
+	didUpdate := false
+	for i, tick := range t.Tickers {
+		if tick.Ticker == ticker.Ticker {
+			t.Tickers[i] = ticker
+			didUpdate = true
+			break
+		}
+	}
+
+	// If we didn't have it already, add it.
+	if !didUpdate {
+		t.Tickers = append(t.Tickers, ticker)
+	}
+
 	t.Unlock()
 
 	err := t.tickerPriceUpdate(&models.PriceUpdate{

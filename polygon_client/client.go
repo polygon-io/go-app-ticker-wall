@@ -119,7 +119,7 @@ func GetTickerYesterdaysClose(ctx context.Context, apiKey, ticker string) (float
 
 	logrus.Debug("Parsed the previous clsoe: ", res)
 	if len(res.Results) < 1 {
-		return 0, fmt.Errorf("no previous close found: %w", err)
+		return 0, nil
 	}
 
 	return res.Results[0].Close, nil

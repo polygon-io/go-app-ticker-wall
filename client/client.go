@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 	"fmt"
-	"io"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -70,8 +70,12 @@ func New() (*ClusterClient, error) {
 // Run starts all of our go routines / listeners.
 func (t *ClusterClient) Run(ctx context.Context) error {
 	// Create gRPC connection, close when done.
-	if err := t.startGRPCClient(); err != nil {
-		return err
+	for {
+		if err := t.startGRPCClient(); err != nil {
+			logrus.Error("Could not create GRPC client to leader.")
+			continue
+		}
+		break
 	}
 	defer t.Close()
 
@@ -84,29 +88,40 @@ func (t *ClusterClient) Run(ctx context.Context) error {
 	})
 
 	// Load in all ticker data.
-	tomb.Go(func() error {
-		return t.LoadTickers(ctx)
-	})
+	// tomb.Go(func() error {
+	// 	return t.LoadTickers(ctx)
+	// })
 
 	return tomb.Wait()
 }
 
 func (t *ClusterClient) joinCluster(ctx context.Context) error {
+	// Load in all ticker details.
+	if err := t.LoadTickers(ctx); err != nil {
+		return err
+	}
+
+	// Join cluster, get read stream ( updateListener ) of events.
 	updateListener, err := t.client.JoinCluster(ctx, t.Screen)
 	if err != nil {
 		return err
 	}
 
+	// Read loop.
 	for {
 		// Read message.
 		update, err := updateListener.Recv()
 		if err != nil {
-			if err == io.EOF {
-				logrus.Info("No more messages from leader.")
-			}
 			logrus.WithError(err).Error("grpc client ending..")
-			t.Status.GRPCStatus = GRPCStatusDisconnected
-			return err
+
+			t.Status.GRPCStatus = GRPCStatusReconnecting
+			if err := t.startGRPCClient(); err != nil {
+				logrus.WithError(err).Error("grpc - could not reconnect... will continue trying...")
+				continue
+			}
+
+			// Now that we are reconnected, start over.
+			return t.joinCluster(ctx)
 		}
 
 		t.Status.GRPCStatus = GRPCStatusConnected
@@ -163,17 +178,22 @@ func (t *ClusterClient) Close() error {
 
 // startGRPCClient creates a new GRPC client connection.
 func (t *ClusterClient) startGRPCClient() error {
+	logrus.Debug("Connect to gRPC Leader.")
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)))
+	opts = append(opts, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 
 	conn, err := grpc.Dial(t.config.Leader, opts...)
 	if err != nil {
 		return fmt.Errorf("not able to connect to grpc ticker wall leader: %w", err)
 	}
 
+	logrus.Debug("Connected TCP to Leader.")
+
 	// Set our attributes.
 	t.conn = conn
 	t.client = models.NewLeaderClient(t.conn)
+
+	logrus.Debug("Created new gRPC client to Leader.")
 
 	return nil
 }

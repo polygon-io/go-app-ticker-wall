@@ -2,7 +2,7 @@ package leader
 
 // Config handles the default settings, as well as data client auth.
 type Config struct {
-	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,SBUX,FB"`
+	TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,SBUX,FB,HOOD"`
 	// TickerList string `split_words:"true" default:"AAPL,AMD,NVDA,FB,NFLX,LPL,AMZN,SNAP,NKE,SBUX,SQ,INTC,IBM"`
 	APIKey string `split_words:"true" required:"true"` // polygon.io API key.
 
