@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -143,5 +143,5 @@ func makeHTTPRequest(ctx context.Context, url string) ([]byte, error) {
 		return nil, errors.New("received non 200 response code")
 	}
 
-	return io.ReadAll(resp.Body)
+	return ioutil.ReadAll(resp.Body)
 }

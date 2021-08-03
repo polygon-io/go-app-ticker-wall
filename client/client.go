@@ -71,10 +71,18 @@ func New() (*ClusterClient, error) {
 func (t *ClusterClient) Run(ctx context.Context) error {
 	// Create gRPC connection, close when done.
 	for {
+		// Check the context incase we cannot ever connect to leader.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		// Continue trying to connect to GRPC until we eventually connect.
 		if err := t.startGRPCClient(); err != nil {
 			logrus.Error("Could not create GRPC client to leader.")
 			continue
 		}
+
+		// We connected, exit loop.
 		break
 	}
 	defer t.Close()
@@ -174,8 +182,14 @@ func (t *ClusterClient) Close() error {
 // startGRPCClient creates a new GRPC client connection.
 func (t *ClusterClient) startGRPCClient() error {
 	logrus.Debug("Connect to gRPC Leader.")
+
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
+	opts = append(opts,
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
+		grpc.WithBlock(),
+		grpc.WithTimeout(5*time.Second),
+	)
 
 	conn, err := grpc.Dial(t.config.Leader, opts...)
 	if err != nil {

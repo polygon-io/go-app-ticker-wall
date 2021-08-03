@@ -95,7 +95,7 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) {
 	if ticker.PriceChangePercentage < 0 {
 		directionalColor = settings.DownColor
 	}
-	priceDifference := ticker.PreviousClosePrice - ticker.Price
+	priceDifference := ticker.Price - ticker.PreviousClosePrice
 	g.nanoCtx.SetFillColor(directionalColor.ToNanov())
 	textString = fmt.Sprintf("%+.2f (%+.2f%%)", priceDifference, ticker.PriceChangePercentage)
 	boundedTextWidth, _ = g.nanoCtx.TextBounds(0, 0, textString)
