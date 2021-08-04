@@ -12,7 +12,7 @@ const (
 	UpdateTypeTickerAdded UpdateType = 2
 	// UpdateTypeTickerRemoved a ticker has been removed from the list.
 	UpdateTypeTickerRemoved UpdateType = 3
-	// UpdateTypeTickerUpdate a ticker has been removed from the list.
+	// UpdateTypeTickerUpdate a ticker has been updated.
 	UpdateTypeTickerUpdate UpdateType = 4
 	// UpdateTypeAnnouncement an announcement has been created.
 	UpdateTypeAnnouncement UpdateType = 5

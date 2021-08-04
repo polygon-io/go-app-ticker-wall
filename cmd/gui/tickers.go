@@ -172,10 +172,8 @@ func (g *GUI) drawGraph(ctx *nanovgo.Context, ticker *models.Ticker, x, y, w, h,
 	ctx.BeginPath()
 	ctx.MoveTo(sx[0], sy[0])
 	for i := 1; i < points; i++ {
-		// ctx.BezierTo(sx[i-1]+dx*0.5, sy[i-1], sx[i]-dx*0.5, sy[i], sx[i], sy[i])
 		ctx.LineTo(sx[i], sy[i])
 	}
-	// g.nanoCtx.SetFillColor(directionalColor.ToNanov())
 	ctx.SetStrokeColor(color.ToNanov())
 	ctx.SetStrokeWidth(4.0)
 	ctx.Stroke()
