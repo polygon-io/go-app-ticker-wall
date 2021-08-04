@@ -18,8 +18,10 @@ func (g *GUI) renderTickers(globalOffset float32) error {
 }
 
 const (
-	graphSize               = 180
-	graphViewportPercentage = .05 // 5% viewport movement range.
+	graphSize = 180
+	// graphViewportPercentage is the amount of movement ( up or down ) we chart at
+	// native scale before we are required to "squish" to fit into the viewport.
+	graphViewportPercentage = .04 // 4% viewport movement range up or down ( 8% total ).
 
 	// Ticker box settings.
 	tickerBoxHeight       = 240
