@@ -26,6 +26,14 @@ message Ticker {
     int32 Index                     = 8;
     int32 Img                       = 9;
     bytes ImgData                   = 10;
+    repeated Agg Aggs               = 11;
+}
+
+// Agg is an individual aggregate used to generate graphs.
+message Agg { 
+    double Price        = 1;
+    int32 Volume        = 2;
+    int64 Timestamp     = 3;
 }
 
 // PriceUpdate is the message sent when a price updates for a ticker.

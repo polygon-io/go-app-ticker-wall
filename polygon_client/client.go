@@ -75,6 +75,44 @@ func (c *Client) LoadTickerData(ctx context.Context, tickerSymbol string) (*mode
 	return ticker, nil
 }
 
+func (c *Client) GetTickerTodayAggs(ctx context.Context, ticker string, rangeSize int) (results []*models.Agg, err error) {
+	loc, _ := time.LoadLocation("America/New_York")
+
+	t := time.Now()
+	// Start at 9am instead of 930am because sometimes pre market is significant to the charts.
+	openTime := time.Date(t.Year(), t.Month(), t.Day(), 9, 0, 0, 0, loc)
+	closeTime := time.Date(t.Year(), t.Month(), t.Day(), 16, 0, 0, 0, loc)
+
+	url := fmt.Sprintf("https://api.polygon.io/v2/aggs/ticker/%s/range/%d/minute/%d/%d?apiKey=%s",
+		ticker,
+		rangeSize,
+		(openTime.UnixNano() / int64(time.Millisecond)),
+		(closeTime.UnixNano() / int64(time.Millisecond)),
+		c.APIKey,
+	)
+	body, err := makeHTTPRequest(ctx, url)
+	if err != nil {
+		return results, err
+	}
+
+	res := &AggsResponse{}
+	if err := json.Unmarshal(body, res); err != nil {
+		return results, fmt.Errorf("unable to parse JSON response from polygon: %w", err)
+	}
+
+	// Transform our polygon.io aggregates into the "model" aggregates.
+	for _, agg := range res.Results {
+		newAgg := &models.Agg{
+			Price:     agg.Close,
+			Volume:    int32(agg.Volume),
+			Timestamp: agg.Timestamp,
+		}
+		results = append(results, newAgg)
+	}
+
+	return results, nil
+}
+
 func GetTickerCurrentPrice(ctx context.Context, apiKey, ticker string) (float64, error) {
 	url := "https://api.polygon.io/v2/last/trade/" + ticker + "?apiKey=" + apiKey
 	body, err := makeHTTPRequest(ctx, url)
@@ -105,6 +143,8 @@ func GetCompanyDetails(ctx context.Context, apiKey, ticker string) (*Company, er
 	return &res.Results, nil
 }
 
+// GetTickerYesterdaysClose is the previous days close price. Takes into account weekends, holidays.
+// This should always return a price for a ticker if it has ever traded previously.
 func GetTickerYesterdaysClose(ctx context.Context, apiKey, ticker string) (float64, error) {
 	url := "https://api.polygon.io/v2/aggs/ticker/" + ticker + "/prev?apiKey=" + apiKey
 	body, err := makeHTTPRequest(ctx, url)
@@ -112,7 +152,7 @@ func GetTickerYesterdaysClose(ctx context.Context, apiKey, ticker string) (float
 		return 0, err
 	}
 
-	res := &PreviousClose{}
+	res := &AggsResponse{}
 	if err := json.Unmarshal(body, res); err != nil {
 		return 0, fmt.Errorf("unable to parse JSON response from polygon: %w", err)
 	}

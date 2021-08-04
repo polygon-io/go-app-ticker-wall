@@ -22,9 +22,8 @@ type Trade struct {
 	Price float64 `json:"p"`
 }
 
-// PreviousClose is the previous days close price. Takes into account weekends, holidays.
-// This should always return a price for a ticker if it has ever traded previously.
-type PreviousClose struct {
+// AggsResponse contains multiple Aggregates in the results block.
+type AggsResponse struct {
 	APIResponse
 	Results []*Aggregate `json:"results"`
 }

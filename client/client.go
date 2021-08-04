@@ -155,6 +155,11 @@ func (t *ClusterClient) processUpdate(update *models.Update) error {
 	case models.UpdateTypeTickerRemoved:
 		err = t.tickerRemoved(update.Ticker)
 
+	// Ticker updated.
+	case models.UpdateTypeTickerUpdate:
+		// We can again use the tickerAdded method since we dedupe and replace.
+		err = t.tickerAdded(update.Ticker)
+
 	// Price of a ticker updated.
 	case models.UpdateTypePrice:
 		err = t.tickerPriceUpdate(update.PriceUpdate)

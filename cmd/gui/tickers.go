@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
@@ -17,7 +18,8 @@ func (g *GUI) renderTickers(globalOffset float32) error {
 }
 
 const (
-	graphSize = 180
+	graphSize               = 180
+	graphViewportPercentage = .05 // 5% viewport movement range.
 
 	// Ticker box settings.
 	tickerBoxHeight       = 240
@@ -102,52 +104,69 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) {
 	g.nanoCtx.Text(offsetRight-boundedTextWidth, lowerRowTopOffset, textString)
 
 	// Graph.
-	g.renderGraph(offsetLeft+400, 63, graphSize)
+	g.renderGraph(ticker, offsetLeft+400, 63, graphSize, directionalColor)
 }
 
-func (g *GUI) renderGraph(x, y, width float32) {
-	g.drawGraph(g.nanoCtx, x, y, width, width, 2)
+func (g *GUI) renderGraph(ticker *models.Ticker, x, y, width float32, color *models.RGBA) {
+	g.drawGraph(g.nanoCtx, ticker, x, y, width, width, 2, color)
 }
 
-func (g *GUI) drawGraph(ctx *nanovgo.Context, x, y, w, h, t float32) {
-	settings := g.client.GetSettings()
+func (g *GUI) drawGraph(ctx *nanovgo.Context, ticker *models.Ticker, x, y, w, h, t float32, color *models.RGBA) {
+	points := len(ticker.Aggs)
 
-	// green := settings.UpColor.ToNanov()
-	red := settings.DownColor.ToNanov()
-
-	const points = 20
-	var sx, sy [points]float32
-	dx := w / (points - 1)
-
-	samples := []float32{
-		0.1,
-		0.2,
-		0.3,
-		0.4,
-		0.3,
-		0.4,
-		0.45,
-		0.32,
-		0.299,
-		0.2,
-		0.15,
-		(1 + sinF(t*1.2345+cosF(t*0.33457)*0.44)) * 0.5,
-		(1 + sinF(t*0.68363+cosF(t*1.3)*1.55)) * 0.5,
-		(1 + sinF(t*1.1642+cosF(t*0.33457)*1.24)) * 0.5,
-		(1 + sinF(t*0.56345+cosF(t*1.63)*0.14)) * 0.5,
-		(1 + sinF(t*1.6245+cosF(t*0.254)*0.3)) * 0.5,
-		(1 + sinF(t*0.345+cosF(t*0.03)*0.6)) * 0.5,
-		(1 + sinF(t*1.2345+cosF(t*0.33457)*0.44)) * 0.5,
-		(1 + sinF(t*0.68363+cosF(t*1.3)*1.55)) * 0.5,
-		(1 + sinF(t*1.1642+cosF(t*0.33457)*1.24)) * 0.5,
-		(1 + sinF(t*0.56345+cosF(t*1.63)*0.14)) * 0.5,
-		(1 + sinF(t*1.6245+cosF(t*0.254)*0.3)) * 0.5,
-		(1 + sinF(t*0.345+cosF(t*0.03)*0.6)) * 0.5,
+	// if we have no data, don't continue.
+	if points < 1 {
+		return
 	}
 
-	for i := 0; i < points; i++ {
+	sx := make([]float32, points)
+	sy := make([]float32, points)
+	dx := w / float32(points-1)
+
+	// Generate graph points.
+	var min, max float64
+	for i, agg := range ticker.Aggs {
+		// Check if max.
+		if agg.Price > max {
+			max = agg.Price
+		}
+
+		// Check if min.
+		if agg.Price < min || min == 0 {
+			min = agg.Price
+		}
+
+		// Set X,Y for this point.
+		sy[i] = float32(agg.Price)
 		sx[i] = x + float32(i)*dx
-		sy[i] = y + h*samples[i]*0.8
+	}
+
+	// Middle of our range.
+	midRange := float32((min + max) / 2)
+
+	// Now we must normalize Y axis to fix in our bounds.
+	var absMax float32
+	for i, val := range sy {
+		sy[i] = (val - midRange) / midRange
+		absValue := float32(math.Abs(float64(sy[i])))
+		if absValue > absMax {
+			absMax = absValue
+		}
+	}
+
+	// If our values are outside of the viewport range percentage, we must squish values
+	// to be inside our desired viewport range percentage.
+	if absMax > graphViewportPercentage {
+		for i, val := range sy {
+			sy[i] = (val / absMax) * graphViewportPercentage
+		}
+	}
+
+	// Change percentage diff to pixel offsets:
+	middleOfViewport := h / 2
+	baseMultiplier := (middleOfViewport / graphViewportPercentage)
+	for i, val := range sy {
+		sy[i] = (y + h) - ((baseMultiplier * val) + middleOfViewport)
 	}
 
 	ctx.BeginPath()
@@ -156,13 +175,14 @@ func (g *GUI) drawGraph(ctx *nanovgo.Context, x, y, w, h, t float32) {
 		// ctx.BezierTo(sx[i-1]+dx*0.5, sy[i-1], sx[i]-dx*0.5, sy[i], sx[i], sy[i])
 		ctx.LineTo(sx[i], sy[i])
 	}
-	ctx.SetStrokeColor(red)
+	// g.nanoCtx.SetFillColor(directionalColor.ToNanov())
+	ctx.SetStrokeColor(color.ToNanov())
 	ctx.SetStrokeWidth(4.0)
 	ctx.Stroke()
 
 	ctx.BeginPath()
 	ctx.Circle(sx[points-1], sy[points-1], 6.0)
-	ctx.SetFillColor(red)
+	ctx.SetFillColor(color.ToNanov())
 	ctx.Fill()
 
 	ctx.SetStrokeWidth(1.0)
