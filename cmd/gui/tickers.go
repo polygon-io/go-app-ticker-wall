@@ -117,7 +117,7 @@ func (g *GUI) drawGraph(ctx *nanovgo.Context, ticker *models.Ticker, x, y, w, h,
 	points := len(ticker.Aggs)
 
 	// if we have no data, don't continue.
-	if points < 1 {
+	if points < 2 {
 		return
 	}
 
