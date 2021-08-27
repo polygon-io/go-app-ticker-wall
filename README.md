@@ -20,7 +20,9 @@ There are 2 components to a ticker wall cluster. 1x Leader and N number of GUIs.
 
 `LEADER=localhost:6886 SCREEN_INDEX=2 go run ./cmd/gui`
 
-# Configuration ( ENV Variables )
+# Configuration
+
+Configuration of the applications are achieved via environment variables. Below are the available options and their default settings. Most of these settings are also configurable via the API after the application has started.
 
 ### Leader
 
