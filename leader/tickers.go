@@ -68,8 +68,8 @@ func (t *Leader) refreshTickerDetails(ctx context.Context, firstRun bool) error 
 			return ctx.Err()
 		}
 
-		// Each call shouldn't take more than 10sec.
-		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		// Total shouldn't take more than 15sec.
+		timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
 
 		// Get details.
