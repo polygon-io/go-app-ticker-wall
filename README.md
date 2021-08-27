@@ -8,17 +8,15 @@ We use it at the Polygon.io office, but we also wanted it to be general enough t
 
 There are 2 components to a ticker wall cluster. 1x Leader and N number of GUIs. The leader can also be run on the same system as a GUI, and there is no minimum for the number of GUIs. You can start with 1 screen, then continue to add more and it will dynamically adjust in real-time.
 
-## To run the Leader with default settings
-
-This must be run in parallel with GUIs.
+**Start the Leader**
 
 `LEADER_API_KEY=myPolygonApiKey go run ./cmd/leader`
 
-## To run the GUI with default settings
+**Run the GUI**
 
 `LEADER=localhost:6886 go run ./cmd/gui`
 
-## To run a second GUI with default settings
+**To run a second GUI**
 
 `LEADER=localhost:6886 SCREEN_INDEX=2 go run ./cmd/gui`
 
