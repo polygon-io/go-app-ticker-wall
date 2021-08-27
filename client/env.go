@@ -6,5 +6,5 @@ type Config struct {
 	// Local Presentation Settings:
 	ScreenWidth  int `split_words:"true" default:"1920"`
 	ScreenHeight int `split_words:"true" default:"300"`
-	ScreenIndex  int `split_words:"true" default:"10"`
+	ScreenIndex  int `split_words:"true" default:"1"`
 }
