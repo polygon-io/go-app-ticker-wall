@@ -20,7 +20,7 @@ func (t *Leader) refreshTickerAggs(ctx context.Context) error {
 		defer cancel()
 
 		// Get the agg data.
-		today := getTodaysDate(time.Now())
+		today := getCurrentOrPreviousWeekday(time.Now())
 		aggs, err := t.DataClient.GetTickerTodayAggs(timeoutCtx, today, ticker.Ticker, 10)
 		if err != nil {
 			return fmt.Errorf("unable to get todays aggs for ticker: %w", err)
@@ -52,12 +52,12 @@ func (t *Leader) refreshTickerAggs(ctx context.Context) error {
 	return nil
 }
 
-func getTodaysDate(today time.Time) time.Time {
+func getCurrentOrPreviousWeekday(today time.Time) time.Time {
 	weekday := today.Weekday()
 	if weekday == time.Sunday || weekday == time.Saturday {
 		// Go back a day
 		today = today.AddDate(0, 0, -1)
-		return getTodaysDate(today)
+		return getCurrentOrPreviousWeekday(today)
 	}
 	return today
 }
