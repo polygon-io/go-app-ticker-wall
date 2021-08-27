@@ -75,10 +75,9 @@ func (c *Client) LoadTickerData(ctx context.Context, tickerSymbol string) (*mode
 	return ticker, nil
 }
 
-func (c *Client) GetTickerTodayAggs(ctx context.Context, ticker string, rangeSize int) (results []*models.Agg, err error) {
+func (c *Client) GetTickerTodayAggs(ctx context.Context, t time.Time, ticker string, rangeSize int) (results []*models.Agg, err error) {
 	loc, _ := time.LoadLocation("America/New_York")
 
-	t := time.Now()
 	// Start at 9am instead of 930am because sometimes pre market is significant to the charts.
 	openTime := time.Date(t.Year(), t.Month(), t.Day(), 9, 0, 0, 0, loc)
 	closeTime := time.Date(t.Year(), t.Month(), t.Day(), 16, 0, 0, 0, loc)

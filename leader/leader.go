@@ -74,18 +74,8 @@ func New() (*Leader, error) {
 func (t *Leader) Run(ctx context.Context) error {
 	logrus.Debug("Loading ticker data..")
 
-	for i, ticker := range t.Tickers {
-		// Make sure context hasn't closed on us.
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		newTickerObj, err := t.DataClient.LoadTickerData(ctx, ticker.Ticker)
-		if err != nil {
-			return err
-		}
-
-		t.Tickers[i] = newTickerObj
+	if err := t.refreshTickerDetails(ctx, true); err != nil {
+		return err
 	}
 
 	// Get graph data for all aggs on load.
@@ -117,6 +107,11 @@ func (t *Leader) Run(ctx context.Context) error {
 	// Regularly get aggregates for each ticker.
 	tomb.Go(func() error {
 		return t.tickerAggsUpdateLoop(ctx)
+	})
+
+	// Regularly get details for each ticker.
+	tomb.Go(func() error {
+		return t.tickerDetailsUpdateLoop(ctx)
 	})
 
 	return tomb.Wait()

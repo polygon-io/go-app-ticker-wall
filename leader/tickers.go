@@ -11,13 +11,17 @@ import (
 
 func (t *Leader) refreshTickerAggs(ctx context.Context) error {
 	for _, ticker := range t.Tickers {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 
 		// Each call shouldn't take more than 10sec.
 		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		// Get the agg data.
-		aggs, err := t.DataClient.GetTickerTodayAggs(timeoutCtx, ticker.Ticker, 10)
+		today := getTodaysDate(time.Now())
+		aggs, err := t.DataClient.GetTickerTodayAggs(timeoutCtx, today, ticker.Ticker, 10)
 		if err != nil {
 			return fmt.Errorf("unable to get todays aggs for ticker: %w", err)
 		}
@@ -45,5 +49,48 @@ func (t *Leader) refreshTickerAggs(ctx context.Context) error {
 
 	}
 
+	return nil
+}
+
+func getTodaysDate(today time.Time) time.Time {
+	weekday := today.Weekday()
+	if weekday == time.Sunday || weekday == time.Saturday {
+		// Go back a day
+		today = today.AddDate(0, 0, -1)
+		return getTodaysDate(today)
+	}
+	return today
+}
+
+func (t *Leader) refreshTickerDetails(ctx context.Context, firstRun bool) error {
+	for _, ticker := range t.Tickers {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		// Each call shouldn't take more than 10sec.
+		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		// Get details.
+		tickerDetails, err := t.DataClient.LoadTickerData(timeoutCtx, ticker.Ticker)
+		if err != nil {
+			return err
+		}
+
+		// Update with details
+		t.Lock()
+		ticker.CompanyName = tickerDetails.CompanyName
+		ticker.PreviousClosePrice = tickerDetails.PreviousClosePrice
+		ticker.OutstandingShares = tickerDetails.OutstandingShares
+		if firstRun {
+			ticker.Price = tickerDetails.Price
+		}
+		t.Unlock()
+		t.Updates <- &models.Update{
+			UpdateType: int32(models.UpdateTypeTickerUpdate),
+			Ticker:     ticker,
+		}
+	}
 	return nil
 }
