@@ -20,10 +20,6 @@ There are 2 components to a ticker wall cluster. 1x Leader and N number of GUIs.
 
 `LEADER=localhost:6886 SCREEN_INDEX=2 go run ./cmd/gui`
 
-# Prerequisites
-
-On linux it requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
-
 # Configuration ( ENV Variables )
 
 ### Leader
@@ -46,6 +42,10 @@ On linux it requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` pac
 - `SCREEN_WIDTH` Is the width of the GUI. Default: `1920`
 - `SCREEN_HEIGHT` Is the height of the GUI. Default: `300`
 - `SCREEN_INDEX` Is the index of the GUI. Eg: First screen `1` Second screen `2` and so on. Default: `1`
+
+# Prerequisites
+
+On linux it requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
 
 # APIs
 
