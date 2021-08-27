@@ -26,7 +26,7 @@ On linux it requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` pac
 
 # Configuration ( ENV Variables )
 
-## Leader
+### Leader
 
 - `LEADER_TICKER_LIST` Is a comma separated list of ticker symbols we want on the ticker tape. Default: `AAPL,AMD,NVDA,SBUX,FB,HOOD`
 - `LEADER_API_KEY` Is your Polygon.io API Key which is used to stream the data. Currently it requires a real-time data subscription.
@@ -40,7 +40,7 @@ On linux it requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` pac
 - `LEADER_PRESENTATION_BG_COLOR` RGBA Value of the background. Default (black): `red:1,green:1,blue:1,alpha:255`
 - `LEADER_PRESENTATION_TICKER_BOX_BG_COLOR` RGBA Value of the background for a ticker box. Default (dark gray): `red:20,green:20,blue:20,alpha:255`
 
-## GUI
+### GUI
 
 - `LEADER` Is the hostname and gRPC port of the leader endpoint. Default: `localhost:6886`
 - `SCREEN_WIDTH` Is the width of the GUI. Default: `1920`
