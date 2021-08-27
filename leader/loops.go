@@ -2,6 +2,7 @@ package leader
 
 import (
 	"context"
+	"time"
 
 	"github.com/polygon-io/go-app-ticker-wall/models"
 )
@@ -38,6 +39,21 @@ func (t *Leader) clientUpdateLoop(ctx context.Context) error {
 			}
 
 			t.RUnlock()
+		}
+	}
+}
+
+// tickerAggsUpdateLoop continually updates each tickers aggregates.
+func (t *Leader) tickerAggsUpdateLoop(ctx context.Context) error {
+	timer1 := time.NewTicker(60 * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer1.C:
+			if err := t.refreshTickerAggs(ctx); err != nil {
+				return err
+			}
 		}
 	}
 }

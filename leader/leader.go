@@ -88,6 +88,11 @@ func (t *Leader) Run(ctx context.Context) error {
 		t.Tickers[i] = newTickerObj
 	}
 
+	// Get graph data for all aggs on load.
+	if err := t.refreshTickerAggs(ctx); err != nil {
+		return err
+	}
+
 	logrus.Info("All ticker data loaded..")
 
 	// Create new tomb for this process.
@@ -107,6 +112,11 @@ func (t *Leader) Run(ctx context.Context) error {
 	// Broadcast updates to clients.
 	tomb.Go(func() error {
 		return t.clientUpdateLoop(ctx)
+	})
+
+	// Regularly get aggregates for each ticker.
+	tomb.Go(func() error {
+		return t.tickerAggsUpdateLoop(ctx)
 	})
 
 	return tomb.Wait()

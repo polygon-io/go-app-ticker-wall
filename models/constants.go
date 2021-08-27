@@ -12,10 +12,12 @@ const (
 	UpdateTypeTickerAdded UpdateType = 2
 	// UpdateTypeTickerRemoved a ticker has been removed from the list.
 	UpdateTypeTickerRemoved UpdateType = 3
+	// UpdateTypeTickerUpdate a ticker has been updated.
+	UpdateTypeTickerUpdate UpdateType = 4
 	// UpdateTypeAnnouncement an announcement has been created.
-	UpdateTypeAnnouncement UpdateType = 4
+	UpdateTypeAnnouncement UpdateType = 5
 	// UpdateTypePrice means a tickers price has been updated.
-	UpdateTypePrice UpdateType = 5
+	UpdateTypePrice UpdateType = 6
 )
 
 // AnnouncementType is used to signify the type of announcement / alert. Different announcement types behave differently.

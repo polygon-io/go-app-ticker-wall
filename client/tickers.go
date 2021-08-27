@@ -17,7 +17,7 @@ func (t *ClusterClient) tickerPriceUpdate(update *models.PriceUpdate) error {
 		if t.Ticker == update.Ticker {
 			t.Price = update.Price
 			t.MarketCap = float64(t.OutstandingShares) * update.Price
-			t.PriceChangePercentage = 1 - (t.Price / t.PreviousClosePrice)
+			t.PriceChangePercentage = ((t.Price / t.PreviousClosePrice) - 1) * 100
 		}
 	}
 
