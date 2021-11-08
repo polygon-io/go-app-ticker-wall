@@ -62,6 +62,12 @@ func initializeConfig(cmd *cobra.Command) error {
 	v.SetConfigName(defaultConfigFilename)
 	v.AddConfigPath(".")
 
+	// Get home dir.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+
+	viper.AddConfigPath(home)
+
 	if err := v.ReadInConfig(); err != nil {
 		// It's okay if there isn't a config file
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
