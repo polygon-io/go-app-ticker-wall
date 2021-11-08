@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	// The name of our config file, without the file extension because viper supports many different config file languages.
-	defaultConfigFilename = "stingoftheviper"
+	defaultConfigFilename = "tickerwall"
 
 	// The environment variable prefix of all environment variables bound to our command line flags.
-	// For example, --number is bound to STING_NUMBER.
+	// For example, --debug is bound to TW_DEBUG.
 	envPrefix = "TW"
 )
 
@@ -42,15 +41,7 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 			return initializeConfig(cmd)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			// Working with OutOrStdout/OutOrStderr allows us to unit test our command easier
-			out := cmd.OutOrStdout()
-			key, err := cmd.Flags().GetString("api-key")
-			if err != nil {
-				panic(err)
-			}
-
-			// Print the final resolved value from binding cobra flags and viper config
-			fmt.Fprintln(out, "Your apikey is:", key)
+			println("Use the --help command to learn more about this apps abilities.")
 		},
 	}
 
@@ -68,16 +59,9 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 func initializeConfig(cmd *cobra.Command) error {
 	v := viper.New()
 
-	// Set the base name of the config file, without the file extension.
 	v.SetConfigName(defaultConfigFilename)
-
-	// Set as many paths as you like where viper should look for the
-	// config file. We are only looking in the current working directory.
 	v.AddConfigPath(".")
 
-	// Attempt to read the config file, gracefully ignoring errors
-	// caused by a config file not being found. Return an error
-	// if we cannot parse the config file.
 	if err := v.ReadInConfig(); err != nil {
 		// It's okay if there isn't a config file
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -85,18 +69,8 @@ func initializeConfig(cmd *cobra.Command) error {
 		}
 	}
 
-	// When we bind flags to environment variables expect that the
-	// environment variables are prefixed, e.g. a flag like --number
-	// binds to an environment variable STING_NUMBER. This helps
-	// avoid conflicts.
 	v.SetEnvPrefix(envPrefix)
-
-	// Bind to environment variables
-	// Works great for simple config names, but needs help for names
-	// like --favorite-color which we fix in the bindFlags function
 	v.AutomaticEnv()
-
-	// Bind the current command's flags to viper
 	bindFlags(cmd, v)
 
 	return nil
@@ -106,7 +80,7 @@ func initializeConfig(cmd *cobra.Command) error {
 func bindFlags(cmd *cobra.Command, v *viper.Viper) {
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		// Environment variables can't have dashes in them, so bind them to their equivalent
-		// keys with underscores, e.g. --favorite-color to STING_FAVORITE_COLOR
+		// keys with underscores.
 		if strings.Contains(f.Name, "-") {
 			envVarSuffix := strings.ToUpper(strings.ReplaceAll(f.Name, "-", "_"))
 			v.BindEnv(f.Name, fmt.Sprintf("%s_%s", envPrefix, envVarSuffix))
