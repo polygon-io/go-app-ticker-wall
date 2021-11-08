@@ -29,9 +29,7 @@ func main() {
 
 // Build the cobra command that handles our command line tool.
 func NewRootCommand() *cobra.Command {
-	// apikey := ""
-
-	// Define our command
+	// Root command.
 	rootCmd := &cobra.Command{
 		Use:   "tickerwall",
 		Short: "Polygon.io Ticker Wall",
@@ -45,11 +43,11 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 		},
 	}
 
-	// rootCmd.PersistentFlags().StringVarP(&apikey, "api-key", "a", "", "Your Polygon.io API Key. This key will be used to access Polygon.io for data.")
+	// Global flags.
 	rootCmd.PersistentFlags().StringP("api-key", "a", "", "Your Polygon.io API Key. This key will be used to access Polygon.io for data.")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Debug enables more verbose logging.")
 
-	// Add additional commands
+	// Add additional commands.
 	rootCmd.AddCommand(newGUICmd())
 	rootCmd.AddCommand(newServerCmd())
 
