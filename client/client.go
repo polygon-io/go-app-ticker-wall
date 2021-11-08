@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -44,13 +43,7 @@ type ClusterClient struct {
 }
 
 // New creates a new ticker wall client.
-func New() (*ClusterClient, error) {
-	// Parse Env Vars:
-	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		return nil, err
-	}
-
+func New(cfg Config) (*ClusterClient, error) {
 	obj := &ClusterClient{
 		config: cfg,
 		Status: &Status{

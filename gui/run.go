@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"context"
@@ -7,35 +7,27 @@ import (
 	"github.com/polygon-io/go-app-ticker-wall/client"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kelseyhightower/envconfig"
 	tombv2 "gopkg.in/tomb.v2"
 )
 
 type Config struct {
-	// Service details
-	LogLevel string `split_words:"true" default:"DEBUG"`
+	Debug        bool
+	ClientConfig client.Config
 }
 
-func run() error {
+func Run(cfg *Config) error {
 	// Global top level context.
 	tomb, ctx := tombv2.WithContext(context.Background())
 
-	// Parse Env Vars:
-	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		return err
+	// Set Log Levels.
+	logLevel := logrus.InfoLevel
+	if cfg.Debug {
+		logLevel = logrus.DebugLevel
 	}
-
-	// Set Log Levels
-	l, err := logrus.ParseLevel(cfg.LogLevel)
-	if err != nil {
-		logrus.WithField("err", err).Warn("parse log level")
-	} else {
-		logrus.SetLevel(l)
-	}
+	logrus.SetLevel(logLevel)
 
 	// Ticker wall client.
-	tickerWallClient, err := client.New()
+	tickerWallClient, err := client.New(cfg.ClientConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create client: %w", err)
 	}
@@ -65,10 +57,4 @@ func run() error {
 	tomb.Kill(err)
 
 	return tomb.Wait()
-}
-
-func main() {
-	if err := run(); err != nil {
-		logrus.WithError(err).Error("Program exiting")
-	}
 }

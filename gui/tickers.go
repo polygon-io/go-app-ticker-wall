@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"fmt"
@@ -106,7 +106,8 @@ func (g *GUI) renderTicker(ticker *models.Ticker, globalOffset float32) {
 	g.nanoCtx.Text(offsetRight-boundedTextWidth, lowerRowTopOffset, textString)
 
 	// Graph.
-	g.renderGraph(ticker, offsetLeft+400, 63, graphSize, directionalColor)
+	topOffset := float32((screen.Height / 2) - (graphSize / 2))
+	g.renderGraph(ticker, offsetLeft+400, topOffset, graphSize, directionalColor)
 }
 
 func (g *GUI) renderGraph(ticker *models.Ticker, x, y, width float32, color *models.RGBA) {
