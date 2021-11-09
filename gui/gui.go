@@ -10,6 +10,8 @@ import (
 	"github.com/goxjs/glfw"
 	"github.com/polygon-io/go-app-ticker-wall/client"
 	"github.com/polygon-io/go-app-ticker-wall/fonts"
+	"github.com/polygon-io/go-app-ticker-wall/gui/notifications"
+	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
 	"github.com/polygon-io/nanovgo/perfgraph"
 	"github.com/sirupsen/logrus"
@@ -30,12 +32,16 @@ type GUI struct {
 
 	// logos keeps track of the logos loaded into render context.
 	logos *LogoManager
+
+	notifications *notifications.Manager
 }
 
 func NewGUI(clientObj client.Client) *GUI {
 	obj := &GUI{
 		client: clientObj,
 		logos:  NewLogosManager(),
+		// Create notifications manager.
+		notifications: notifications.NewManager(),
 	}
 
 	return obj
@@ -115,6 +121,16 @@ func (g *GUI) Run(ctx context.Context) error {
 
 func (g *GUI) RenderLoop(ctx context.Context) error {
 	// This is the main rendering loop. Every frame rendered must run everything in this loop.
+	t := time.Now().UnixMilli()
+	announcement := models.Announcement{
+		Message:           "testing...",
+		AnnouncementType:  int32(models.AnnouncementTypeInfo),
+		ShowAtTimestampMS: t + 2000,
+		LifespanMS:        2000,
+		Animation:         int32(models.AnnouncementAnimationElastic),
+	}
+	g.notifications.AddNotification(&announcement)
+
 	for !g.window.ShouldClose() {
 		// Get frame ready.
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
@@ -123,6 +139,14 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 		if err := g.renderFrame(); err != nil {
 			logrus.WithError(err).Error("Could not render frame.")
 		}
+
+		settings := g.client.GetSettings()
+		cluster := g.client.GetCluster()
+		screen := g.client.GetScreen()
+
+		// Notifications.
+		g.notifications.UpdateAttributes(settings, cluster, screen)
+		g.notifications.RenderLoop(g.nanoCtx)
 
 		g.endFrame()
 

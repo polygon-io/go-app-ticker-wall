@@ -84,13 +84,13 @@ These are not in order of priority.
 - CLI for interacting with cluster.
   - Ability to add tickers while app is running.
   - All the current REST endpoint interactions.
-- WebSocket reconnect logic ( we really need our go client library ).
-- gRPC reconnect logic to leader.
-- Potentially make charts instead of logos.
+- WebSocket reconnect logic ( we really need our go client library ). ( Waiting for go lib ).
+- gRPC reconnect logic to leader. DONE.
+- Potentially make charts instead of logos. DONE.
 - Run inside docker container.
 - Some kind of build process. tests?
 
-- Maybe v2.0? - Instead of 2 separate binaries, use raft to establish the leader. 1 binary.
+- v2.0 - Instead of 2 separate binaries, use raft to establish the leader. 1 application.
 
 ### Data
 
