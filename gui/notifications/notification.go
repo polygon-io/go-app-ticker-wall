@@ -42,10 +42,12 @@ func (n *Notification) ShouldRender() bool {
 	return true
 }
 
+// determineAnimations sets the animation effects for the intro/outro of the notification.
 func (n *Notification) determineAnimations() {
 	switch models.AnnouncementAnimation(n.announcement.Animation) {
 	case models.AnnouncementAnimationBounce:
-		n.transformationAnimationOut = ease.InElastic // bounce looks weird on out, this seems more natural.
+		// bounce looks weird on out, this seems more natural.
+		n.transformationAnimationOut = ease.InElastic
 		n.transformationAnimationIn = ease.OutBounce
 	case models.AnnouncementAnimationEase:
 		n.transformationAnimationOut = ease.InQuint
@@ -59,6 +61,8 @@ func (n *Notification) determineAnimations() {
 	}
 }
 
+// Render actually renders the notification to the GUI context. `ShouldRender` should be run before this
+// to ensure the rendering method should be called on this notification.
 func (n *Notification) Render(ctx *nanovgo.Context) {
 	// Current timestamp ( MS )
 	t := time.Now().UnixMilli()
@@ -81,7 +85,6 @@ func (n *Notification) Render(ctx *nanovgo.Context) {
 
 	// Determine which animation to use for the announcement.
 	// To see more: https://github.com/fogleman/ease
-
 	if t-n.announcement.ShowAtTimestampMS < int64(settings.AnimationDurationMS) { // Enter animation is in progress.
 		diff := t - n.announcement.ShowAtTimestampMS
 		percentageCompleted := float64(diff) / float64(settings.AnimationDurationMS)
