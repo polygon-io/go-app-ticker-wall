@@ -85,29 +85,34 @@ func (n *Notification) Render(ctx *nanovgo.Context) {
 
 	// Determine which animation to use for the announcement.
 	// To see more: https://github.com/fogleman/ease
-	if t-n.announcement.ShowAtTimestampMS < int64(settings.AnimationDurationMS) { // Enter animation is in progress.
+
+	if t-n.announcement.ShowAtTimestampMS < int64(settings.AnimationDurationMS) {
+		// Enter animation is in progress.
 		diff := t - n.announcement.ShowAtTimestampMS
 		percentageCompleted := float64(diff) / float64(settings.AnimationDurationMS)
 		logrus.Info("Enter completion: ", percentageCompleted)
 
 		// bg calcs
-		bgBottom = bgBottomStart - ((bgBottomStart - bgBottomEnd) * n.transformationAnimationIn(percentageCompleted))
+		inPercCompleted := n.transformationAnimationIn(percentageCompleted)
+		bgBottom = bgBottomStart - ((bgBottomStart - bgBottomEnd) * inPercCompleted)
 		bgTop = (bgBottom - float64(screen.Height))
 
 		// text calcs
-		textTop = textTopStart - ((textTopStart - textTopEnd) * n.transformationAnimationIn(percentageCompleted))
+		textTop = textTopStart - ((textTopStart - textTopEnd) * inPercCompleted)
 
-	} else if t > n.announcement.ShowAtTimestampMS+n.announcement.LifespanMS { // Exit animation in progress.
+	} else if t > n.announcement.ShowAtTimestampMS+n.announcement.LifespanMS {
+		// Exit animation in progress.
 		diff := t - (n.announcement.ShowAtTimestampMS + n.announcement.LifespanMS)
 		percentageCompleted := float64(diff) / float64(settings.AnimationDurationMS)
 		logrus.Info("Exit completion: ", percentageCompleted)
 
 		// bg calcs
-		bgBottom = bgBottomEnd - ((bgBottomEnd - bgBottomStart) * n.transformationAnimationOut(percentageCompleted))
+		outPercCompleted := n.transformationAnimationOut(percentageCompleted)
+		bgBottom = bgBottomEnd - ((bgBottomEnd - bgBottomStart) * outPercCompleted)
 		bgTop = (bgBottom - float64(screen.Height))
 
 		// text calcs
-		textTop = textTopEnd - ((textTopEnd - textTopStart) * n.transformationAnimationOut(percentageCompleted))
+		textTop = textTopEnd - ((textTopEnd - textTopStart) * outPercCompleted)
 	}
 
 	ctx.Save()
