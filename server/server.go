@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -7,39 +7,31 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kelseyhightower/envconfig"
 	leader "github.com/polygon-io/go-app-ticker-wall/leader"
 	"github.com/sirupsen/logrus"
 	tombv2 "gopkg.in/tomb.v2"
 )
 
 type ServiceConfig struct {
-	LogLevel string `split_words:"true" default:"DEBUG"`
-	GRPCPort int    `split_words:"true" default:"6886"`
-	HTTPPort int    `split_words:"true" default:"6887"`
+	Debug        bool
+	GRPCPort     int
+	HTTPPort     int
+	LeaderConfig leader.Config
 }
 
-func run() error {
+func Run(cfg *ServiceConfig) error {
 	// Global top level context.
 	tomb, ctx := tombv2.WithContext(context.Background())
 
-	// Parse Env Vars:
-	var cfg ServiceConfig
-	err := envconfig.Process("POLY", &cfg)
-	if err != nil {
-		return err
+	// Set Log Levels.
+	logLevel := logrus.InfoLevel
+	if cfg.Debug {
+		logLevel = logrus.DebugLevel
 	}
-
-	// Set Log Levels
-	l, err := logrus.ParseLevel(cfg.LogLevel)
-	if err != nil {
-		logrus.WithField("err", err).Warn("parse log level")
-	} else {
-		logrus.SetLevel(l)
-	}
+	logrus.SetLevel(logLevel)
 
 	// Start the ticker wall leader.
-	clusterLeader, err := leader.New()
+	clusterLeader, err := leader.New(&cfg.LeaderConfig)
 	if err != nil {
 		return fmt.Errorf("could not create cluster leader: %w", err)
 	}
@@ -72,11 +64,4 @@ func run() error {
 	})
 
 	return tomb.Wait()
-}
-
-func main() {
-	if err := run(); err != nil {
-		logrus.WithError(err).Error("Program exiting")
-	}
-	logrus.Info("bye.")
 }

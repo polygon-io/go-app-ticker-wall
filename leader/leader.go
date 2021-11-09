@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	polygon "github.com/polygon-io/go-app-ticker-wall/polygon_client"
 	"github.com/sirupsen/logrus"
@@ -35,15 +34,9 @@ type Leader struct {
 }
 
 // New creates a new ticker wall leader.
-func New() (*Leader, error) {
-	// Parse environment variables.
-	var cfg Config
-	if err := envconfig.Process("LEADER", &cfg); err != nil {
-		return nil, err
-	}
-
+func New(cfg *Config) (*Leader, error) {
 	obj := &Leader{
-		config: cfg,
+		config: *cfg,
 		PresentationSettings: &models.PresentationSettings{
 			AnimationDurationMS: int32(cfg.Presentation.AnimationDuration),
 			TickerBoxWidth:      int32(cfg.Presentation.TickerBoxWidthPx),
@@ -72,7 +65,7 @@ func New() (*Leader, error) {
 }
 
 func (t *Leader) Run(ctx context.Context) error {
-	logrus.Debug("Loading ticker data..")
+	logrus.Info("Loading ticker data..")
 
 	if err := t.refreshTickerDetails(ctx, true); err != nil {
 		return err
