@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/polygon-io/go-app-ticker-wall/gui"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func newDescribeCmd() *cobra.Command {
-	cfg := &gui.Config{}
 	var leaderClient *ServerClient
 
 	cmd := &cobra.Command{
@@ -42,8 +40,6 @@ func newDescribeCmd() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVarP(&cfg.ClientConfig.Leader, "leader", "l", "localhost:6886", "Location of the leader. ( hostname:grpcPort ). If running locally, use default.")
 
 	// Dont auto sort flags.
 	cmd.Flags().SortFlags = false

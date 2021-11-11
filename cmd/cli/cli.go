@@ -58,6 +58,7 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 
 	// Global flags.
 	rootCmd.PersistentFlags().StringP("api-key", "a", "", "Your Polygon.io API Key. This key will be used to access Polygon.io for data.")
+	rootCmd.PersistentFlags().StringP("leader", "l", "localhost:6886", "The leaders address of the cluster.")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Debug enables more verbose logging.")
 
 	// Add additional commands.
