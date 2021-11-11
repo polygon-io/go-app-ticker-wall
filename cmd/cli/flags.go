@@ -19,7 +19,7 @@ func colorFlags(colorMap *colorMap) *pflag.FlagSet {
 // presentationFlags creates a flagset for the presentation options.
 func presentationFlags(presentationSettings *models.PresentationSettings) *pflag.FlagSet {
 	presentationFlags := pflag.NewFlagSet("presentation", pflag.ContinueOnError)
-	presentationFlags.Int32VarP(&presentationSettings.ScrollSpeed, "scroll-speed", "s", 15, "How fast the tickers scroll across the screen. This is inverted so 1 is the fastest possible.")
+	presentationFlags.Int32VarP(&presentationSettings.ScrollSpeed, "scroll-speed", "s", 8, "How fast the tickers scroll across the screen. This is inverted so 1 is the fastest possible.")
 	presentationFlags.Int32VarP(&presentationSettings.TickerBoxWidth, "ticker-box-width", "w", 1100, "The size of the ticker box, in pixels.")
 	presentationFlags.Int32VarP(&presentationSettings.AnimationDurationMS, "animation-duration", "", 500, "Animation during of notifications, in milliseconds.")
 	presentationFlags.BoolVarP(&presentationSettings.PerTickUpdates, "per-tick-updates", "", true, "If the ticker wall should update on every trade which happens. Setting to false limits it to update 1/sec.")
