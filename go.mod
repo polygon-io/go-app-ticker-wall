@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/fogleman/ease v0.0.0-20170301025033-8da417bf1776
 	github.com/gin-gonic/gin v1.7.1
-	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/goxjs/gl v0.0.0-20210104184919-e3fafc6f8f2a
@@ -20,6 +19,7 @@ require (
 	github.com/spf13/viper v1.9.0
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 	google.golang.org/grpc v1.40.0
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 )

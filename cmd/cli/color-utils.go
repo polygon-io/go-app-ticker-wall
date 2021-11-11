@@ -5,28 +5,28 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/polygon-io/go-app-ticker-wall/server"
+	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 )
 
 type colorMap struct {
-	UpColor          []string `default:"red:51,green:255,blue:51,alpha:255"`
-	DownColor        []string `default:"red:255,green:51,blue:51,alpha:255"`
-	FontColor        []string `default:"red:255,green:255,blue:255,alpha:255"`
-	TickerBoxBGColor []string `default:"red:20,green:20,blue:20,alpha:255"`
-	BGColor          []string `default:"red:1,green:1,blue:1,alpha:255"`
+	UpColor          string `default:"51,255,51,255"`
+	DownColor        string `default:"255,51,51,255"`
+	FontColor        string `default:"255,255,255,255"`
+	TickerBoxBGColor string `default:"20,20,20,255"`
+	BGColor          string `default:"1,1,1,255"`
 }
 
-func parseColorMap(cmap *colorMap, cfg *server.ServiceConfig) {
-	cfg.LeaderConfig.Presentation.UpColor = mapColorArrayToMap(cmap.UpColor)
-	cfg.LeaderConfig.Presentation.DownColor = mapColorArrayToMap(cmap.DownColor)
-	cfg.LeaderConfig.Presentation.FontColor = mapColorArrayToMap(cmap.FontColor)
-	cfg.LeaderConfig.Presentation.TickerBoxBGColor = mapColorArrayToMap(cmap.TickerBoxBGColor)
-	cfg.LeaderConfig.Presentation.BGColor = mapColorArrayToMap(cmap.BGColor)
+func parseColorMap(cmap *colorMap, cfg *models.PresentationSettings) {
+	cfg.UpColor = mapColorArrayToMap(cmap.UpColor)
+	cfg.DownColor = mapColorArrayToMap(cmap.DownColor)
+	cfg.FontColor = mapColorArrayToMap(cmap.FontColor)
+	cfg.TickerBoxBGColor = mapColorArrayToMap(cmap.TickerBoxBGColor)
+	cfg.BGColor = mapColorArrayToMap(cmap.BGColor)
 }
 
-func mapColorArrayToMap(colors []string) map[string]int32 {
-	mapping := make(map[string]int32)
+func mapColorArrayToMap(colorString string) *models.RGBA {
+	colors := strings.Split(colorString, ",")
 
 	if len(colors) != 4 {
 		logrus.Debug("Color mapping does not have enough attributes. Requires 4, has: ", len(colors), " Value: ", strings.Join(colors, ","))
@@ -50,9 +50,10 @@ func mapColorArrayToMap(colors []string) map[string]int32 {
 		logrus.Error("Got error decoding alpha value: ", colors[0])
 	}
 
-	mapping["red"] = int32(red)
-	mapping["green"] = int32(green)
-	mapping["blue"] = int32(blue)
-	mapping["alpha"] = int32(alpha)
-	return mapping
+	return &models.RGBA{
+		Red:   int32(red),
+		Green: int32(green),
+		Blue:  int32(blue),
+		Alpha: int32(alpha),
+	}
 }

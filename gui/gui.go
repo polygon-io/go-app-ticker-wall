@@ -11,7 +11,6 @@ import (
 	"github.com/polygon-io/go-app-ticker-wall/client"
 	"github.com/polygon-io/go-app-ticker-wall/fonts"
 	"github.com/polygon-io/go-app-ticker-wall/gui/notifications"
-	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
 	"github.com/polygon-io/nanovgo/perfgraph"
 	"github.com/sirupsen/logrus"
@@ -103,6 +102,8 @@ func (g *GUI) Setup() error {
 	g.nanoCtx.SetTextAlign(nanovgo.AlignLeft | nanovgo.AlignTop)
 	g.nanoCtx.SetTextLineHeight(1.2)
 
+	go g.listenForAnnouncements()
+
 	// Set the logo managers context.
 	return g.logos.Setup(g.nanoCtx)
 }
@@ -115,22 +116,27 @@ func (g *GUI) Close() error {
 	return nil
 }
 
+// listenForAnnouncements listens on the clients announcements channel and updates our local
+// notification manager.
+func (g *GUI) listenForAnnouncements() {
+	ctx := context.Background()
+	announcements := g.client.GetAnnouncements()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case announcement := <-announcements:
+			g.notifications.AddNotification(announcement)
+		}
+	}
+}
+
 func (g *GUI) Run(ctx context.Context) error {
 	return nil
 }
 
 func (g *GUI) RenderLoop(ctx context.Context) error {
 	// This is the main rendering loop. Every frame rendered must run everything in this loop.
-	t := time.Now().UnixMilli()
-	announcement := models.Announcement{
-		Message:           "testing...",
-		AnnouncementType:  int32(models.AnnouncementTypeInfo),
-		ShowAtTimestampMS: t + 2000,
-		LifespanMS:        2000,
-		Animation:         int32(models.AnnouncementAnimationElastic),
-	}
-	g.notifications.AddNotification(&announcement)
-
 	for !g.window.ShouldClose() {
 		// Get frame ready.
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
@@ -140,17 +146,7 @@ func (g *GUI) RenderLoop(ctx context.Context) error {
 			logrus.WithError(err).Error("Could not render frame.")
 		}
 
-		settings := g.client.GetSettings()
-		cluster := g.client.GetCluster()
-		screen := g.client.GetScreen()
-
-		// Notifications.
-		g.notifications.UpdateAttributes(settings, cluster, screen)
-		g.notifications.RenderLoop(g.nanoCtx)
-
 		g.endFrame()
-
-		g.logos.RenderThread()
 	}
 
 	return ctx.Err()
@@ -169,12 +165,16 @@ func (g *GUI) renderFrame() error {
 	}
 
 	// Get cluster information.
-	if g.client.GetCluster() == nil {
+	cluster := g.client.GetCluster()
+	if cluster == nil {
 		// This should be displayed on the app using a new system message method.
 		logrus.Debug("Cluster not ready yet. Waiting on gRPC..")
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
+
+	settings := g.client.GetSettings()
+	screen := g.client.GetScreen()
 
 	g.fpsGraph.UpdateGraph()
 
@@ -183,12 +183,14 @@ func (g *GUI) renderFrame() error {
 	// Set BG color
 	g.paintBG()
 
-	// Actual application drawing.
+	// Tickers.
 	if err := g.renderTickers(globalOffsetTimestamp); err != nil {
 		return err
 	}
 
-	// TODO: Render announcement if exists.
+	// Notifications.
+	g.notifications.UpdateAttributes(settings, cluster, screen)
+	g.notifications.RenderLoop(g.nanoCtx)
 
 	g.renderFPSGraph()
 	return nil

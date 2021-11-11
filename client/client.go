@@ -19,7 +19,7 @@ type Client interface {
 	GetSettings() *models.PresentationSettings
 	GetCluster() *models.ScreenCluster
 	GetScreen() *models.Screen
-	GetAnnouncement() *models.Announcement
+	GetAnnouncements() chan *models.Announcement
 	GetStatus() *Status
 }
 
@@ -34,10 +34,12 @@ type ClusterClient struct {
 	client models.LeaderClient
 
 	// State which will be kept in sync.
-	Screen       *models.Screen
-	Tickers      []*models.Ticker
-	Cluster      *models.ScreenCluster
-	Announcement *models.Announcement
+	Screen  *models.Screen
+	Tickers []*models.Ticker
+	Cluster *models.ScreenCluster
+
+	// Announcements is a channel of announcements to display.
+	Announcements chan *models.Announcement
 
 	Status *Status
 }
@@ -55,6 +57,7 @@ func New(cfg Config) (*ClusterClient, error) {
 			Height: int32(cfg.ScreenHeight),
 			Index:  int32(cfg.ScreenIndex),
 		},
+		Announcements: make(chan *models.Announcement, 100),
 	}
 
 	return obj, nil
@@ -161,6 +164,10 @@ func (t *ClusterClient) processUpdate(update *models.Update) error {
 	case models.UpdateTypeAnnouncement:
 		err = t.updateAnnouncement(update.Announcement)
 
+	// We have a new announcement.
+	case models.UpdatePresentationSettings:
+		err = t.updatePresentationSettings(update.PresentationSettings)
+
 	default:
 		logrus.WithField("updateType", update.UpdateType).Warning("Unknown update type message.")
 	}
@@ -207,7 +214,20 @@ func (t *ClusterClient) startGRPCClient() error {
 
 // nolint:unparam // This will become more complex in later PR.
 func (t *ClusterClient) updateAnnouncement(announcement *models.Announcement) error {
-	// TODO: figure out when we should remove the announcement once it's lifespan has ended.
-	t.Announcement = announcement
+	logrus.Debug("Got announcement.. ", announcement)
+
+	// Put the announcement into the queue for display.
+	t.Announcements <- announcement
+
+	return nil
+}
+
+// updatePresentationSettings updates our presentation settings.
+func (t *ClusterClient) updatePresentationSettings(update *models.PresentationSettings) error {
+	t.Lock()
+	defer t.Unlock()
+
+	t.Cluster.Settings = update
+
 	return nil
 }

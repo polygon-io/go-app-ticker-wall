@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package models;
+option go_package = "github.com/polygon-io/go-app-tickerwall/models";
 
 // Leader is the exposed endpoint(s) for the leader service.
 service Leader {
@@ -9,6 +10,12 @@ service Leader {
 
     // Get our current list of tickers.
     rpc GetTickers(Empty) returns (Tickers) {}
+
+    // Update our presentation settings.
+    rpc UpdatePresentationSettings(PresentationSettings) returns (PresentationSettings) {}
+
+    // Announce a new message
+    rpc Announce(Announcement) returns (Announcement) {}
 
     // Get our current screen cluster.
     rpc GetScreenCluster(Empty) returns (ScreenCluster) {}
@@ -30,7 +37,7 @@ message Ticker {
 }
 
 // Agg is an individual aggregate used to generate graphs.
-message Agg { 
+message Agg {
     double Price        = 1;
     int32 Volume        = 2;
     int64 Timestamp     = 3;
@@ -76,15 +83,17 @@ message PresentationSettings {
     bool ShowLogos              = 8;
     bool ShowFPS                = 9;
     int32 AnimationDurationMS   = 10;
+    bool PerTickUpdates         = 11;
 }
 
 // Update encapsulates different update messages. 
 message Update {
-    int32 UpdateType                = 1;
-    PriceUpdate PriceUpdate         = 2;
-    Announcement Announcement       = 3;
-    ScreenCluster ScreenCluster     = 4;
-    Ticker Ticker                   = 5;
+    int32 UpdateType                           = 1;
+    PriceUpdate PriceUpdate                    = 2;
+    Announcement Announcement                  = 3;
+    ScreenCluster ScreenCluster                = 4;
+    Ticker Ticker                              = 5;
+    PresentationSettings PresentationSettings  = 6;
 }
 
 // RGBA is how we represent colors.

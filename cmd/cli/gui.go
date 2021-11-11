@@ -16,11 +16,6 @@ func newGUICmd() *cobra.Command {
 		Short: `Start a new instance of the GUI.`,
 		Long:  `Start a new instance of the GUI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			debug, _ := cmd.Flags().GetBool("debug")
-
-			// Set the global options.
-			cfg.Debug = debug
-
 			// Actually start the GUI process.
 			if err := gui.Run(cfg); err != nil {
 				logrus.WithError(err).Error("GUI encountered an error.")

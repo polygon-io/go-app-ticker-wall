@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/polygon-io/go-app-ticker-wall/client"
-	"github.com/sirupsen/logrus"
 
 	tombv2 "gopkg.in/tomb.v2"
 )
@@ -18,13 +17,6 @@ type Config struct {
 func Run(cfg *Config) error {
 	// Global top level context.
 	tomb, ctx := tombv2.WithContext(context.Background())
-
-	// Set Log Levels.
-	logLevel := logrus.InfoLevel
-	if cfg.Debug {
-		logLevel = logrus.DebugLevel
-	}
-	logrus.SetLevel(logLevel)
 
 	// Ticker wall client.
 	tickerWallClient, err := client.New(cfg.ClientConfig)

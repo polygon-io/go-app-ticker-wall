@@ -18,6 +18,8 @@ const (
 	UpdateTypeAnnouncement UpdateType = 5
 	// UpdateTypePrice means a tickers price has been updated.
 	UpdateTypePrice UpdateType = 6
+	// UpdatePresentationSettings means presentation settings have been updated.
+	UpdatePresentationSettings UpdateType = 7
 )
 
 // AnnouncementType is used to signify the type of announcement / alert. Different announcement types behave differently.
