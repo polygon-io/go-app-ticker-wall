@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 
-	"github.com/polygon-io/go-app-ticker-wall/gui"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func newUpdateCmd() *cobra.Command {
-	cfg := &gui.Config{}
 	var leaderClient *ServerClient
 
 	// Where the new settings will be put
@@ -42,8 +40,6 @@ func newUpdateCmd() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVarP(&cfg.ClientConfig.Leader, "leader", "l", "localhost:6886", "Location of the leader. ( hostname:grpcPort ). If running locally, use default.")
 
 	// Presentation Settings.
 	cmd.Flags().AddFlagSet(presentationFlags(newSettings))
