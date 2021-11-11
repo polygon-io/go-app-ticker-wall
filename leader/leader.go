@@ -36,19 +36,9 @@ type Leader struct {
 // New creates a new ticker wall leader.
 func New(cfg *Config) (*Leader, error) {
 	obj := &Leader{
-		config: *cfg,
-		PresentationSettings: &models.PresentationSettings{
-			AnimationDurationMS: int32(cfg.Presentation.AnimationDuration),
-			TickerBoxWidth:      int32(cfg.Presentation.TickerBoxWidthPx),
-			ScrollSpeed:         int32(cfg.Presentation.ScrollSpeed),
-			ShowLogos:           cfg.Presentation.ShowLogos,
-			UpColor:             constructRGBA(cfg.Presentation.UpColor),
-			DownColor:           constructRGBA(cfg.Presentation.DownColor),
-			TickerBoxBGColor:    constructRGBA(cfg.Presentation.TickerBoxBGColor),
-			BGColor:             constructRGBA(cfg.Presentation.BGColor),
-			FontColor:           constructRGBA(cfg.Presentation.FontColor),
-		},
-		Updates: make(chan *models.Update, 1000),
+		config:               *cfg,
+		PresentationSettings: cfg.Presentation,
+		Updates:              make(chan *models.Update, 1000),
 	}
 
 	// Split out the tickers from the config.

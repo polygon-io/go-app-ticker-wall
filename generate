@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 # Generate models protobuf:
-protoc -I ./models/ -I ${GOPATH}/src --go_out=plugins=grpc:models/ ./models/models.proto
+protoc -I ./models/ -I ${GOPATH}/src --go_out=plugins=grpc:models/ ./models/models.proto --go_opt=paths=source_relative

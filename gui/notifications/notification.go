@@ -6,7 +6,6 @@ import (
 	ease "github.com/fogleman/ease"
 	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/nanovgo"
-	"github.com/sirupsen/logrus"
 )
 
 type Notification struct {
@@ -90,7 +89,6 @@ func (n *Notification) Render(ctx *nanovgo.Context) {
 		// Enter animation is in progress.
 		diff := t - n.announcement.ShowAtTimestampMS
 		percentageCompleted := float64(diff) / float64(settings.AnimationDurationMS)
-		logrus.Info("Enter completion: ", percentageCompleted)
 
 		// bg calcs
 		inPercCompleted := n.transformationAnimationIn(percentageCompleted)
@@ -104,7 +102,6 @@ func (n *Notification) Render(ctx *nanovgo.Context) {
 		// Exit animation in progress.
 		diff := t - (n.announcement.ShowAtTimestampMS + n.announcement.LifespanMS)
 		percentageCompleted := float64(diff) / float64(settings.AnimationDurationMS)
-		logrus.Info("Exit completion: ", percentageCompleted)
 
 		// bg calcs
 		outPercCompleted := n.transformationAnimationOut(percentageCompleted)

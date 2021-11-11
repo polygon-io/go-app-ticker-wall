@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	leader "github.com/polygon-io/go-app-ticker-wall/leader"
-	"github.com/sirupsen/logrus"
 	tombv2 "gopkg.in/tomb.v2"
 )
 
@@ -22,13 +21,6 @@ type ServiceConfig struct {
 func Run(cfg *ServiceConfig) error {
 	// Global top level context.
 	tomb, ctx := tombv2.WithContext(context.Background())
-
-	// Set Log Levels.
-	logLevel := logrus.InfoLevel
-	if cfg.Debug {
-		logLevel = logrus.DebugLevel
-	}
-	logrus.SetLevel(logLevel)
 
 	// Start the ticker wall leader.
 	clusterLeader, err := leader.New(&cfg.LeaderConfig)

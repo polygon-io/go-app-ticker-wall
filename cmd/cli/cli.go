@@ -36,7 +36,20 @@ func NewRootCommand() *cobra.Command {
 		Long: `A horizontally scalable ticker wall to display real-time stock data. 
 Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return initializeConfig(cmd)
+			if err := initializeConfig(cmd); err != nil {
+				return err
+			}
+
+			// Set log levels:
+			debug, _ := cmd.Flags().GetBool("debug")
+			logLevel := logrus.InfoLevel
+			if debug {
+				logLevel = logrus.DebugLevel
+			}
+			// Set Log Levels.
+			logrus.SetLevel(logLevel)
+
+			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			println("Use the --help command to learn more about this apps abilities.")
@@ -50,6 +63,8 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 	// Add additional commands.
 	rootCmd.AddCommand(newGUICmd())
 	rootCmd.AddCommand(newServerCmd())
+	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newAnnounceCmd())
 
 	return rootCmd
 }

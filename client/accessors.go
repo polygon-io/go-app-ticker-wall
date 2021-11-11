@@ -34,12 +34,12 @@ func (t *ClusterClient) GetScreen() *models.Screen {
 	return t.Screen
 }
 
-// GetAnnouncement returns the local screen settings.
-func (t *ClusterClient) GetAnnouncement() *models.Announcement {
+// GetAnnouncements returns the channel of announcements to be displayed.
+func (t *ClusterClient) GetAnnouncements() chan *models.Announcement {
 	t.RLock()
 	defer t.RUnlock()
 
-	return t.Announcement
+	return t.Announcements
 }
 
 // GetStatus returns the clients status.

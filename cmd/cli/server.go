@@ -3,14 +3,19 @@ package main
 import (
 	"os"
 
+	"github.com/polygon-io/go-app-ticker-wall/leader"
+	"github.com/polygon-io/go-app-ticker-wall/models"
 	"github.com/polygon-io/go-app-ticker-wall/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 func newServerCmd() *cobra.Command {
-	cfg := &server.ServiceConfig{}
+	cfg := &server.ServiceConfig{
+		LeaderConfig: leader.Config{
+			Presentation: &models.PresentationSettings{},
+		},
+	}
 	colorMap := &colorMap{}
 
 	cmd := &cobra.Command{
@@ -18,13 +23,10 @@ func newServerCmd() *cobra.Command {
 		Short: `Start a new instance of the Server.`,
 		Long:  `Start a new instance of the Server.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			parseColorMap(colorMap, cfg.LeaderConfig.Presentation)
+
+			// Set the api key.
 			apiKey, _ := cmd.Flags().GetString("api-key")
-			debug, _ := cmd.Flags().GetBool("debug")
-
-			parseColorMap(colorMap, cfg)
-
-			// Set the global options.
-			cfg.Debug = debug
 			cfg.LeaderConfig.APIKey = apiKey
 
 			if cfg.LeaderConfig.APIKey == "" {
@@ -47,19 +49,10 @@ func newServerCmd() *cobra.Command {
 	cmd.Flags().IntVarP(&cfg.HTTPPort, "http-port", "p", 6887, "Which port the HTTP Server should bind to.")
 
 	// Presentation Settings.
-	cmd.Flags().IntVarP(&cfg.LeaderConfig.Presentation.ScrollSpeed, "scroll-speed", "s", 15, "How fast the tickers scroll across the screen. This is inverted so 0 is the fastest possible.")
-	cmd.Flags().IntVarP(&cfg.LeaderConfig.Presentation.TickerBoxWidthPx, "ticker-box-width", "w", 1100, "The size of the ticker box, in pixels.")
-	cmd.Flags().IntVarP(&cfg.LeaderConfig.Presentation.AnimationDuration, "animation-duration", "", 500, "Animation during of notifications, in milliseconds.")
-	cmd.Flags().BoolVarP(&cfg.LeaderConfig.Presentation.PerTickUpdates, "per-tick-updates", "", true, "If the ticker wall should update on every trade which happens. Setting to false limits it to update 1/sec.")
+	cmd.Flags().AddFlagSet(presentationFlags(cfg.LeaderConfig.Presentation))
 
 	// Color Settings.
-	colorFlags := pflag.NewFlagSet("color", pflag.ContinueOnError)
-	colorFlags.StringArrayVarP(&colorMap.UpColor, "up-color", "", []string{"51", "255", "51", "255"}, "RGBA color mapping for the 'up' color. Array must be in order. red,green,blue,alpha.")
-	colorFlags.StringArrayVarP(&colorMap.DownColor, "down-color", "", []string{"255", "51", "51", "255"}, "RGBA color mapping for the 'down' color. Array must be in order. red,green,blue,alpha.")
-	colorFlags.StringArrayVarP(&colorMap.FontColor, "font-color", "", []string{"255", "255", "255", "255"}, "RGBA color mapping for the 'font' color. Array must be in order. red,green,blue,alpha.")
-	colorFlags.StringArrayVarP(&colorMap.TickerBoxBGColor, "ticker-bg-color", "", []string{"20", "20", "20", "255"}, "RGBA color mapping for the 'font' color. Array must be in order. red,green,blue,alpha.")
-	colorFlags.StringArrayVarP(&colorMap.BGColor, "bg-color", "", []string{"1", "1", "1", "255"}, "RGBA color mapping for the 'bg' color. Array must be in order. red,green,blue,alpha.")
-	cmd.Flags().AddFlagSet(colorFlags)
+	cmd.Flags().AddFlagSet(colorFlags(colorMap))
 
 	// Dont auto sort flags.
 	cmd.Flags().SortFlags = false
