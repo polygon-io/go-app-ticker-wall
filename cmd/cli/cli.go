@@ -65,6 +65,7 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 	rootCmd.AddCommand(newServerCmd())
 	rootCmd.AddCommand(newUpdateCmd())
 	rootCmd.AddCommand(newAnnounceCmd())
+	rootCmd.AddCommand(newDescribeCmd())
 
 	return rootCmd
 }

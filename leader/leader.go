@@ -66,7 +66,8 @@ func (t *Leader) Run(ctx context.Context) error {
 		return err
 	}
 
-	logrus.Info("All ticker data loaded..")
+	logrus.Debug("All ticker data loaded..")
+	logrus.Info("Ready for Clients.")
 
 	// Create new tomb for this process.
 	tomb, ctx := tombv2.WithContext(ctx)
