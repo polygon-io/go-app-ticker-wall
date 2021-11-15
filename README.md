@@ -30,20 +30,6 @@ We must start the leader so that the GUIs can connect and get their data to disp
 
 Configuration of the applications are achieved via cli flags > env variables > configuration file. The application will search for a configuration file with the name of 'tickerwall' which can be in .yml, .json or .toml format. Environment variables overwrite config file settings, and command line flags overwrite env variables.
 
-# Prerequisites
-
-## Linux
-
-On linux, the application requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
-
-## Mac
-
-No additional packages are required for Mac.
-
-# Windows
-
-Not sure, haven't been able to test it.
-
 # Updating settings
 
 You can use the cli to update attributes of the cluster in real-time. Here are some examples:
@@ -73,6 +59,20 @@ You can describe a running cluster using the following:
       ./tickerwall describe
 
 Which should generate output that is similar to:
+
+# Prerequisites
+
+### Linux
+
+On linux, the application requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
+
+### Mac
+
+No additional packages are required for Mac.
+
+### Windows
+
+Not sure, haven't been able to test it.
 
 ```
 Global Viewport Size: 5760 px
