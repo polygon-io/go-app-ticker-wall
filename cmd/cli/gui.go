@@ -29,7 +29,7 @@ func newGUICmd() *cobra.Command {
 
 	cmd.Flags().IntVarP(&cfg.ClientConfig.ScreenHeight, "screen-height", "y", 300, "Height of this GUI window, in pixels.")
 	cmd.Flags().IntVarP(&cfg.ClientConfig.ScreenWidth, "screen-width", "x", 1600, "Width of this GUI window, in pixels.")
-	cmd.Flags().IntVarP(&cfg.ClientConfig.ScreenIndex, "screen-index", "i", 10, "Index of this GUI window in the window array. Eg: First screen: 10, Second screen: 20, and so on. This is an arbitrary number, used for sorting order.")
+	cmd.Flags().IntVarP(&cfg.ClientConfig.ScreenIndex, "screen-index", "i", 1, "Index of this GUI window in the window array. Eg: First screen: 10, Second screen: 20, and so on. This is an arbitrary number, used for sorting order.")
 
 	return cmd
 }
