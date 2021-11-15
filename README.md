@@ -60,20 +60,6 @@ You can describe a running cluster using the following:
 
 Which should generate output that is similar to:
 
-# Prerequisites
-
-### Linux
-
-On linux, the application requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
-
-### Mac
-
-No additional packages are required for Mac.
-
-### Windows
-
-Not sure, haven't been able to test it.
-
 ```
 Global Viewport Size: 5760 px
 Animation Duration: 500 ms
@@ -107,6 +93,20 @@ Tickers:
  -  FB  [  Meta Platforms, Inc. Class A Common Stock  ]
  -  HOOD  [  Robinhood Markets, Inc. Class A Common Stock  ]
 ```
+
+# Building from Source Prerequisites
+
+### Linux
+
+On linux, the application requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
+
+### Mac
+
+No additional packages are required for Mac.
+
+### Windows
+
+Not sure, haven't been able to test it.
 
 # TODO / Wish List
 
