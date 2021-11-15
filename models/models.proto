@@ -19,6 +19,9 @@ service Leader {
 
     // Get our current screen cluster.
     rpc GetScreenCluster(Empty) returns (ScreenCluster) {}
+
+    // UpdateScreen allows a screen to update it's details after it's started and joined.
+    rpc UpdateScreen(Screen) returns (Screen) {}
 }
 
 // Ticker is used to update a tickers information ( leader -> follower ).

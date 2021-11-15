@@ -21,6 +21,7 @@ type Client interface {
 	GetScreen() *models.Screen
 	GetAnnouncements() chan *models.Announcement
 	GetStatus() *Status
+	UpdateScreen(width, height int)
 }
 
 const maxMessageSize = 1024 * 1024 * 1 // 1MB

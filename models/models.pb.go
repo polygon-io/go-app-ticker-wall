@@ -975,7 +975,7 @@ var file_models_proto_rawDesc = []byte{
 	0x28, 0x0a, 0x07, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
 	0x32, 0x0e, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x72,
 	0x52, 0x07, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x72, 0x73, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x6d, 0x70,
-	0x74, 0x79, 0x32, 0xbd, 0x02, 0x0a, 0x06, 0x4c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x31, 0x0a,
+	0x74, 0x79, 0x32, 0xef, 0x02, 0x0a, 0x06, 0x4c, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x31, 0x0a,
 	0x0b, 0x4a, 0x6f, 0x69, 0x6e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x0e, 0x2e, 0x6d,
 	0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x53, 0x63, 0x72, 0x65, 0x65, 0x6e, 0x1a, 0x0e, 0x2e, 0x6d,
 	0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x22, 0x00, 0x30, 0x01,
@@ -995,10 +995,13 @@ var file_models_proto_rawDesc = []byte{
 	0x65, 0x65, 0x6e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x0d, 0x2e, 0x6d, 0x6f, 0x64,
 	0x65, 0x6c, 0x73, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x15, 0x2e, 0x6d, 0x6f, 0x64, 0x65,
 	0x6c, 0x73, 0x2e, 0x53, 0x63, 0x72, 0x65, 0x65, 0x6e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
-	0x22, 0x00, 0x42, 0x30, 0x5a, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x70, 0x6f, 0x6c, 0x79, 0x67, 0x6f, 0x6e, 0x2d, 0x69, 0x6f, 0x2f, 0x67, 0x6f, 0x2d, 0x61,
-	0x70, 0x70, 0x2d, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x72, 0x77, 0x61, 0x6c, 0x6c, 0x2f, 0x6d, 0x6f,
-	0x64, 0x65, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x00, 0x12, 0x30, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x63, 0x72, 0x65,
+	0x65, 0x6e, 0x12, 0x0e, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x53, 0x63, 0x72, 0x65,
+	0x65, 0x6e, 0x1a, 0x0e, 0x2e, 0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x73, 0x2e, 0x53, 0x63, 0x72, 0x65,
+	0x65, 0x6e, 0x22, 0x00, 0x42, 0x30, 0x5a, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x70, 0x6f, 0x6c, 0x79, 0x67, 0x6f, 0x6e, 0x2d, 0x69, 0x6f, 0x2f, 0x67, 0x6f,
+	0x2d, 0x61, 0x70, 0x70, 0x2d, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x72, 0x77, 0x61, 0x6c, 0x6c, 0x2f,
+	0x6d, 0x6f, 0x64, 0x65, 0x6c, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1047,13 +1050,15 @@ var file_models_proto_depIdxs = []int32{
 	6,  // 16: models.Leader.UpdatePresentationSettings:input_type -> models.PresentationSettings
 	3,  // 17: models.Leader.Announce:input_type -> models.Announcement
 	10, // 18: models.Leader.GetScreenCluster:input_type -> models.Empty
-	7,  // 19: models.Leader.JoinCluster:output_type -> models.Update
-	9,  // 20: models.Leader.GetTickers:output_type -> models.Tickers
-	6,  // 21: models.Leader.UpdatePresentationSettings:output_type -> models.PresentationSettings
-	3,  // 22: models.Leader.Announce:output_type -> models.Announcement
-	5,  // 23: models.Leader.GetScreenCluster:output_type -> models.ScreenCluster
-	19, // [19:24] is the sub-list for method output_type
-	14, // [14:19] is the sub-list for method input_type
+	4,  // 19: models.Leader.UpdateScreen:input_type -> models.Screen
+	7,  // 20: models.Leader.JoinCluster:output_type -> models.Update
+	9,  // 21: models.Leader.GetTickers:output_type -> models.Tickers
+	6,  // 22: models.Leader.UpdatePresentationSettings:output_type -> models.PresentationSettings
+	3,  // 23: models.Leader.Announce:output_type -> models.Announcement
+	5,  // 24: models.Leader.GetScreenCluster:output_type -> models.ScreenCluster
+	4,  // 25: models.Leader.UpdateScreen:output_type -> models.Screen
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
 	14, // [14:14] is the sub-list for extension extendee
 	0,  // [0:14] is the sub-list for field type_name
@@ -1240,6 +1245,8 @@ type LeaderClient interface {
 	Announce(ctx context.Context, in *Announcement, opts ...grpc.CallOption) (*Announcement, error)
 	// Get our current screen cluster.
 	GetScreenCluster(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ScreenCluster, error)
+	// UpdateScreen allows a screen to update it's details after it's started and joined.
+	UpdateScreen(ctx context.Context, in *Screen, opts ...grpc.CallOption) (*Screen, error)
 }
 
 type leaderClient struct {
@@ -1318,6 +1325,15 @@ func (c *leaderClient) GetScreenCluster(ctx context.Context, in *Empty, opts ...
 	return out, nil
 }
 
+func (c *leaderClient) UpdateScreen(ctx context.Context, in *Screen, opts ...grpc.CallOption) (*Screen, error) {
+	out := new(Screen)
+	err := c.cc.Invoke(ctx, "/models.Leader/UpdateScreen", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LeaderServer is the server API for Leader service.
 type LeaderServer interface {
 	// Join the screen cluster. Updates to the cluster will be streamed to clients.
@@ -1330,6 +1346,8 @@ type LeaderServer interface {
 	Announce(context.Context, *Announcement) (*Announcement, error)
 	// Get our current screen cluster.
 	GetScreenCluster(context.Context, *Empty) (*ScreenCluster, error)
+	// UpdateScreen allows a screen to update it's details after it's started and joined.
+	UpdateScreen(context.Context, *Screen) (*Screen, error)
 }
 
 // UnimplementedLeaderServer can be embedded to have forward compatible implementations.
@@ -1350,6 +1368,9 @@ func (*UnimplementedLeaderServer) Announce(context.Context, *Announcement) (*Ann
 }
 func (*UnimplementedLeaderServer) GetScreenCluster(context.Context, *Empty) (*ScreenCluster, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetScreenCluster not implemented")
+}
+func (*UnimplementedLeaderServer) UpdateScreen(context.Context, *Screen) (*Screen, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateScreen not implemented")
 }
 
 func RegisterLeaderServer(s *grpc.Server, srv LeaderServer) {
@@ -1449,6 +1470,24 @@ func _Leader_GetScreenCluster_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Leader_UpdateScreen_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Screen)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LeaderServer).UpdateScreen(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/models.Leader/UpdateScreen",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LeaderServer).UpdateScreen(ctx, req.(*Screen))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Leader_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "models.Leader",
 	HandlerType: (*LeaderServer)(nil),
@@ -1468,6 +1507,10 @@ var _Leader_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetScreenCluster",
 			Handler:    _Leader_GetScreenCluster_Handler,
+		},
+		{
+			MethodName: "UpdateScreen",
+			Handler:    _Leader_UpdateScreen_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

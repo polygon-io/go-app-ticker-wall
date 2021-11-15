@@ -11,6 +11,12 @@ import (
 func (g *GUI) renderTickers(globalOffset float32) error {
 	tickers := g.DetermineTickersForRender(globalOffset)
 	for _, ticker := range tickers {
+		// This happens when there are more screen pixels than we can cover with the current amount of tickers.
+		// The solution is to add more tickers, but we should fix the underlying maths issue in `DetermineTickersForRender`.
+		// TODO: Fix layout calculation issue in `DetermineTickersForRender`
+		if ticker == nil {
+			continue
+		}
 		g.renderTicker(ticker, globalOffset)
 	}
 
