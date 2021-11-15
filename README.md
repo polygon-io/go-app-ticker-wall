@@ -2,7 +2,7 @@
   <img src="misc/ticker-wall.gif" />
 </p>
 
-# Ticker Wall
+# Polygon.io - Ticker Wall
 
 The Polygon.io ticker wall is an open source, cross platform, scalable ticker tape. It is meant to be scalable across many machines to eliminate the need for expensive specialty hardware for achieving a scrolling ticker tape. It is cross platform compatible, so it runs on mac, windows or linux ( only mac and linux tested ). All interaction is done via the CLI. There is a gRPC interface for more advanced integrations.
 
@@ -43,6 +43,10 @@ Updating the background color to white:
       ./tickerwall update --bg-color=255,255,255,255
 
 # Making Announcements
+
+<p align="center">
+  <video src="misc/ticker-announcement.mp4" autoplay=true />
+</p>
 
 You can make announcements using the ticker wall using the following command:
 
