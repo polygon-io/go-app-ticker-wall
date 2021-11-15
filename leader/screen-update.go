@@ -11,7 +11,12 @@ import (
 // UpdatePresentationSettings updates the presentation settings of the cluster and sends out an
 // update to all clients.
 func (t *Leader) UpdateScreen(ctx context.Context, newScreenSettings *models.Screen) (*models.Screen, error) {
-	logrus.Debug("Update presentation settings..", newScreenSettings)
+	logrus.WithFields(logrus.Fields{
+		"UUID":   newScreenSettings.UUID,
+		"width":  newScreenSettings.Width,
+		"height": newScreenSettings.Height,
+		"index":  newScreenSettings.Index,
+	}).Debug("Update presentation settings..")
 
 	didFind := false
 	t.Lock()
