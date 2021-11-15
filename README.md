@@ -45,7 +45,7 @@ Updating the background color to white:
 # Making Announcements
 
 <p align="center">
-  <video src="misc/ticker-announcement.mp4" autoplay=true />
+  <img src="misc/ticker-announcement.gif"/>
 </p>
 
 You can make announcements using the ticker wall using the following command:
