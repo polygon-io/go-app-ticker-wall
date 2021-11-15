@@ -67,9 +67,8 @@ func (g *GUI) Setup() error {
 	}
 	g.window = window
 	g.window.MakeContextCurrent()
-	g.window.SetCloseCallback(func(w *glfw.Window) {
-		logrus.Info("Window Closed")
-	})
+	g.window.SetCloseCallback(g.windowClosedEvent)
+	g.window.SetSizeCallback(g.windowResizeEvent)
 
 	// Create context
 	nanoCtx, err := nanovgo.NewContext(0)

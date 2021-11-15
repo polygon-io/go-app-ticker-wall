@@ -48,7 +48,6 @@ func (g *GUI) DetermineTickersForRender(globalOffset float32) []*models.Ticker {
 
 	// Global offset does not necessarily ever reset, so we need to get the localized offset.
 	localizedOffset := globalOffset + screenGlobalOffset
-	// // logrus.Trace("Localized Offset: ", localizedOffset)
 
 	firstIndex := int(math.Floor(float64(localizedOffset) / float64(settings.TickerBoxWidth)))
 	lastIndex := int(math.Floor(float64(localizedOffset+float32(g.windowWidth)) / float64(settings.TickerBoxWidth)))
