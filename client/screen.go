@@ -11,6 +11,7 @@ func (t *ClusterClient) UpdateScreen(width, height int) {
 		"widht":  width,
 		"height": height,
 	}).Debug("Updating screen attributes..")
+
 	t.Lock()
 	t.Screen.Height = int32(height)
 	t.Screen.Width = int32(width)
