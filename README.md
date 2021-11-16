@@ -6,7 +6,7 @@
 
 The Polygon.io ticker wall is an open source, cross platform, scalable ticker tape. It is meant to be scalable across many machines to eliminate the need for expensive specialty hardware for achieving a scrolling ticker tape. It is cross platform compatible, so it runs on mac, windows or linux ( only mac and linux tested ). All interaction is done via the CLI. There is a gRPC interface for more advanced integrations.
 
-We use it at the Polygon.io office, but we also wanted it to be general enough to suite a broad group of needs, so most interactions and settings are configurable.
+We use it at the [Polygon.io](https://polygon.io) office, but we also wanted it to be general enough to suite a broad group of needs, so most interactions and settings are configurable.
 
 # Getting Started
 
