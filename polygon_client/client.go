@@ -80,7 +80,7 @@ func (c *Client) GetTickerTodayAggs(ctx context.Context, t time.Time, ticker str
 
 	// Start at 9am instead of 930am because sometimes pre market is significant to the charts.
 	openTime := time.Date(t.Year(), t.Month(), t.Day(), 9, 0, 0, 0, loc)
-	closeTime := time.Date(t.Year(), t.Month(), t.Day(), 16, 0, 0, 0, loc)
+	closeTime := time.Date(t.Year(), t.Month(), t.Day(), 16, 30, 0, 0, loc)
 
 	url := fmt.Sprintf("https://api.polygon.io/v2/aggs/ticker/%s/range/%d/minute/%d/%d?apiKey=%s",
 		ticker,
