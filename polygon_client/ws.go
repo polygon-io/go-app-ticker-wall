@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	polygonws "github.com/polygon-io/client-go/websocket"
+	polygonws_models "github.com/polygon-io/client-go/websocket/models"
+
 	"github.com/gorilla/websocket"
 	"github.com/polygon-io/go-app-ticker-wall/models"
-	"github.com/sirupsen/logrus"
 )
 
 //easyjson:json
@@ -47,113 +49,47 @@ func (c *Client) AddTickerToUpdates(tickers []string) error {
 	return nil
 }
 
-// ListenForTickerUpdates listens for trades on the given tickers. This will
-// get propogated via the client.PriceUpdates channel.
 func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) error {
-	// Close our update channel when we exit.
-	defer close(c.tickerUpdate)
-
-	logrus.Debug("tickerS: ", len(tickers), tickers)
-
-	wsClient, _, err := websocket.DefaultDialer.DialContext(ctx, "wss://socket.polygon.io/stocks", nil)
-	if err != nil {
-		return fmt.Errorf("unable to connect to websocket endpoint: %w", err)
-	}
-	c.wsClient = wsClient
-	defer c.wsClient.Close()
-
-	// Set close handler.
-	// TODO: Reconnect when websockets gets disconnected.
-	c.wsClient.SetCloseHandler(func(code int, text string) error {
-		logrus.Debug("WebSockets closed.")
-		return nil
-	})
-
-	if err := c.wsClient.WriteMessage(
-		websocket.TextMessage, []byte(fmt.Sprintf(`{"action":"auth","params":"%s"}`, c.APIKey)),
-	); err != nil {
-		return fmt.Errorf("unable to send auth message to websockets: %w", err)
+	if err := c.websocketClient.Connect(); err != nil {
+		return fmt.Errorf("connect websocket: %w", err)
 	}
 
-	if err := c.AddTickerToUpdates(tickers); err != nil {
-		return err
+	defer c.websocketClient.Close()
+
+	topic := polygonws.StocksSecAggs
+	if c.perTickUpdates {
+		topic = polygonws.StocksTrades
 	}
 
-	// Start the actual processing.
-	// Starting a go routing in a library func is not great. Also, completely
-	// ignores the error returned.
-	go func() {
-		if err := c.queueTickerUpdates(ctx); err != nil {
-			logrus.WithError(err).Error("Unable to queue ticker update.")
-		}
-	}()
-	go func() {
-		<-ctx.Done()
-		logrus.Debug("Context closed, ending WS connection.")
-		_ = c.wsClient.Close()
-	}()
+	if err := c.websocketClient.Subscribe(topic, tickers...); err != nil {
+		return fmt.Errorf("subscribe websocket: %w", err)
+	}
 
-	// As little logic as possible in the reader loop:
-	logrus.Debug("Listening to WebSockets for updates.")
+	// TODO: This loop spins and saturates a full CPU.
+	//       Update this with whatever new thing we decide.
 	for {
-		// Read message from WS.
-		_, messageBody, err := c.wsClient.ReadMessage()
-		if err != nil {
-			return fmt.Errorf("websocket read error: %w", err)
-		}
-
-		// Send it to the parser.
-		c.tickerUpdate <- messageBody
-	}
-}
-
-func (c *Client) queueTickerUpdates(ctx context.Context) error {
-	// Close our update channel when we exit.
-	defer close(c.PriceUpdates)
-	logrus.Debug("Queue ticker updates")
-
-	for {
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return ctx.Err()
-		case msgBytes, ok := <-c.tickerUpdate:
-			if !ok {
-				return nil
-			}
-
-			// Actually process
-			if err := c.processWebsocketEvent(msgBytes); err != nil {
-				return err
-			}
 		}
-	}
-}
 
-func (c *Client) processWebsocketEvent(msgBytes []byte) error {
-	// Unmarshal the WebSocket message.
-	trades := websocketTrades{}
-	if err := trades.UnmarshalJSON(msgBytes); err != nil {
-		return fmt.Errorf("could not unmarshal json from server: %w", err)
-	}
-
-	// Each message contains multiple events inside of it.
-	for _, trade := range trades {
-		// This is NOT a trade message, skip.
-		if trade.Event != "T" && trade.Event != "A" {
+		msg := c.websocketClient.Output()
+		if msg == nil {
 			continue
 		}
 
-		price := trade.Price
-		if trade.Event == "A" {
-			price = trade.High
-		}
-
-		// Broadcast this update.
-		c.PriceUpdates <- &models.PriceUpdate{
-			Ticker: trade.Ticker,
-			Price:  price,
+		switch msg.(type) {
+		case polygonws_models.EquityAgg:
+			agg := msg.(polygonws_models.EquityAgg)
+			c.PriceUpdates <- &models.PriceUpdate{
+				Ticker: agg.Symbol,
+				Price:  agg.Close,
+			}
+		case polygonws_models.EquityTrade:
+			trade := msg.(polygonws_models.EquityTrade)
+			c.PriceUpdates <- &models.PriceUpdate{
+				Ticker: trade.Symbol,
+				Price:  trade.Price,
+			}
 		}
 	}
-
-	return nil
 }

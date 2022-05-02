@@ -49,7 +49,11 @@ func New(cfg *Config) (*Leader, error) {
 	}
 
 	// Create new Polygon API Client.
-	obj.DataClient = polygon.NewClient(cfg.APIKey, cfg.Presentation.PerTickUpdates)
+	var err error
+	obj.DataClient, err = polygon.NewClient(cfg.APIKey, cfg.Presentation.PerTickUpdates)
+	if err != nil {
+		return nil, err
+	}
 
 	return obj, nil
 }
