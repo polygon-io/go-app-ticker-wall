@@ -27,10 +27,7 @@ type company struct {
 }
 
 type Client struct {
-	APIKey       string
-	PriceUpdates chan *models.PriceUpdate
-	// Used for internally passing messages between websockets and parser.
-	tickerUpdate   chan []byte
+	PriceUpdates   chan *models.PriceUpdate
 	perTickUpdates bool
 	wsClient       *websocket.Conn
 
@@ -51,8 +48,6 @@ func NewClient(apiKey string, perTickUpdate bool) (*Client, error) {
 	}
 
 	return &Client{
-		APIKey:          apiKey,
-		tickerUpdate:    make(chan []byte, bufferedChannelSize),
 		PriceUpdates:    make(chan *models.PriceUpdate, bufferedChannelSize),
 		perTickUpdates:  perTickUpdate,
 		restClient:      polygon.New(apiKey),
