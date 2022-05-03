@@ -299,8 +299,8 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/sftp v1.10.1/go.mod h1:lYOWFsE0bwd1+KfKJaKeuokY15vzFx25BLbzYYoAxZI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/polygon-io/client-go v0.5.0 h1:m40Tg4/kkDD0SHiQhmDwu4Fu5VKl6asB9UfMrpjv+L4=
-github.com/polygon-io/client-go v0.5.0/go.mod h1:UoEdco0FToYGfslCIg8Jr2/zMiKND9jXD72yW+Lo6rI=
+github.com/polygon-io/client-go v0.6.0 h1:kBBj/ikArwDnQBK5lJDSBf08UCYtxI9Rx1+gGUgUbvg=
+github.com/polygon-io/client-go v0.6.0/go.mod h1:UoEdco0FToYGfslCIg8Jr2/zMiKND9jXD72yW+Lo6rI=
 github.com/polygon-io/nanovgo v0.0.0-20210406222537-1c1e04bebee3 h1:l05Gu/FjlakPZRflTvOB289bXYMuYdF+Qtj6u1/JAIo=
 github.com/polygon-io/nanovgo v0.0.0-20210406222537-1c1e04bebee3/go.mod h1:3sFQCuEakqbn0IP8+cBG/MFdBrWvVDU0pyLAuF+SGYI=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=

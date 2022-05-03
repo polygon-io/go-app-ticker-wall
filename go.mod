@@ -11,7 +11,7 @@ require (
 	github.com/goxjs/glfw v0.0.0-20191126052801-d2efb5f20838
 	github.com/imdario/mergo v0.3.12
 	github.com/mailru/easyjson v0.7.7
-	github.com/polygon-io/client-go v0.5.0
+	github.com/polygon-io/client-go v0.6.0
 	github.com/polygon-io/nanovgo v0.0.0-20210406222537-1c1e04bebee3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1

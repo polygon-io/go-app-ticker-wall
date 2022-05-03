@@ -65,30 +65,28 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 		return fmt.Errorf("subscribe websocket: %w", err)
 	}
 
-	// TODO: This loop spins and saturates a full CPU.
-	//       Update this with whatever new thing we decide.
 	for {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		msg := c.websocketClient.Output()
-		if msg == nil {
-			continue
-		}
-
-		switch msg.(type) {
-		case polygonws_models.EquityAgg:
-			agg := msg.(polygonws_models.EquityAgg)
-			c.PriceUpdates <- &models.PriceUpdate{
-				Ticker: agg.Symbol,
-				Price:  agg.Close,
+		select {
+		case <-ctx.Done():
+			return nil
+		case msg, more := <-c.websocketClient.Output():
+			if !more {
+				return nil
 			}
-		case polygonws_models.EquityTrade:
-			trade := msg.(polygonws_models.EquityTrade)
-			c.PriceUpdates <- &models.PriceUpdate{
-				Ticker: trade.Symbol,
-				Price:  trade.Price,
+
+			switch msg.(type) {
+			case polygonws_models.EquityAgg:
+				agg := msg.(polygonws_models.EquityAgg)
+				c.PriceUpdates <- &models.PriceUpdate{
+					Ticker: agg.Symbol,
+					Price:  agg.Close,
+				}
+			case polygonws_models.EquityTrade:
+				trade := msg.(polygonws_models.EquityTrade)
+				c.PriceUpdates <- &models.PriceUpdate{
+					Ticker: trade.Symbol,
+					Price:  trade.Price,
+				}
 			}
 		}
 	}
