@@ -118,7 +118,6 @@ Not sure, haven't been able to test it.
 
 These are not in order of priority.
 
-- WebSocket reconnect logic ( we really need our go client library ). ( Waiting for official go lib ).
 - Run inside docker container.
 - Some kind of build process. tests?
 
