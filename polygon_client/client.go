@@ -99,7 +99,7 @@ func (c *Client) GetTickerTodayAggs(ctx context.Context, t time.Time, ticker str
 	aggsParams := polygon_models.GetAggsParams{
 		Ticker:     ticker,
 		Multiplier: rangeSize,
-		Resolution: polygon_models.Minute,
+		Timespan:   polygon_models.Minute,
 		From:       polygon_models.Millis(openTime),
 		To:         polygon_models.Millis(closeTime),
 	}.WithLimit(int(closeTime.Sub(openTime) / time.Minute))
