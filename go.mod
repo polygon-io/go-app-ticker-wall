@@ -10,8 +10,7 @@ require (
 	github.com/goxjs/gl v0.0.0-20210104184919-e3fafc6f8f2a
 	github.com/goxjs/glfw v0.0.0-20191126052801-d2efb5f20838
 	github.com/imdario/mergo v0.3.12
-	github.com/mailru/easyjson v0.7.7
-	github.com/polygon-io/client-go v0.6.0
+	github.com/polygon-io/client-go v0.10.0
 	github.com/polygon-io/nanovgo v0.0.0-20210406222537-1c1e04bebee3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
@@ -38,7 +37,6 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20210406100015-1e088ea4ee04 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
