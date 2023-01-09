@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"github.com/polygon-io/go-app-ticker-wall/models"

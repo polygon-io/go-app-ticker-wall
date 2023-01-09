@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newGUICmd() *cobra.Command {
+func NewGUICmd() *cobra.Command {
 	cfg := &gui.Config{}
 
 	cmd := &cobra.Command{

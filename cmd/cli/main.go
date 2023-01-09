@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/polygon-io/go-app-ticker-wall/cli"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -62,11 +63,11 @@ Find out more at: https://github.com/polygon-io/go-app-ticker-wall`,
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Debug enables more verbose logging.")
 
 	// Add additional commands.
-	rootCmd.AddCommand(newGUICmd())
-	rootCmd.AddCommand(newServerCmd())
-	rootCmd.AddCommand(newUpdateCmd())
-	rootCmd.AddCommand(newAnnounceCmd())
-	rootCmd.AddCommand(newDescribeCmd())
+	rootCmd.AddCommand(cli.NewGUICmd())
+	rootCmd.AddCommand(cli.NewServerCmd())
+	rootCmd.AddCommand(cli.NewUpdateCmd())
+	rootCmd.AddCommand(cli.NewAnnounceCmd())
+	rootCmd.AddCommand(cli.NewDescribeCmd())
 
 	return rootCmd
 }
