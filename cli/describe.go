@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newDescribeCmd() *cobra.Command {
+func NewDescribeCmd() *cobra.Command {
 	var leaderClient *ServerClient
 
 	cmd := &cobra.Command{

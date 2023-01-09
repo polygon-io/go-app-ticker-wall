@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newServerCmd() *cobra.Command {
+func NewServerCmd() *cobra.Command {
 	cfg := &server.ServiceConfig{
 		LeaderConfig: leader.Config{
 			Presentation: &models.PresentationSettings{},

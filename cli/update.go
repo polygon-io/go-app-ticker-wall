@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newUpdateCmd() *cobra.Command {
+func NewUpdateCmd() *cobra.Command {
 	var leaderClient *ServerClient
 
 	// Where the new settings will be put
