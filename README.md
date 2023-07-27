@@ -96,7 +96,7 @@ Tickers:
  -  AMD  [  Advanced Micro Devices  ]
  -  NVDA  [  Nvidia Corp  ]
  -  SBUX  [  Starbucks Corp  ]
- -  FB  [  Meta Platforms, Inc. Class A Common Stock  ]
+ -  META  [  Meta Platforms, Inc. Class A Common Stock  ]
  -  HOOD  [  Robinhood Markets, Inc. Class A Common Stock  ]
 ```
 
@@ -118,7 +118,7 @@ Not sure, haven't been able to test it.
 
 These are not in order of priority.
 
-- Run inside docker container.
-- Some kind of build process. tests?
+-   Run inside docker container.
+-   Some kind of build process. tests?
 
-- v2.0 - Instead of 2 separate roles ( Server and GUI(s)), use raft to establish the leader amongst GUIs.
+-   v2.0 - Instead of 2 separate roles ( Server and GUI(s)), use raft to establish the leader amongst GUIs.
