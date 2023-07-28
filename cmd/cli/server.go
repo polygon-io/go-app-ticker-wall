@@ -42,7 +42,7 @@ func newServerCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&cfg.LeaderConfig.TickerList, "tickers", "t", "AAPL,AMD,NVDA,SBUX,FB,HOOD", "A comma separated list of tickers to display on the ticker wall.")
+	cmd.Flags().StringVarP(&cfg.LeaderConfig.TickerList, "tickers", "t", "AAPL,AMD,NVDA,SBUX,META,HOOD", "A comma separated list of tickers to display on the ticker wall.")
 
 	// Ports
 	cmd.Flags().IntVarP(&cfg.GRPCPort, "grpc-port", "g", 6886, "Which port the GRPC Server should bind to.")
