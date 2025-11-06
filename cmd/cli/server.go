@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/polygon-io/go-app-ticker-wall/leader"
-	"github.com/polygon-io/go-app-ticker-wall/models"
-	"github.com/polygon-io/go-app-ticker-wall/server"
+	"github.com/massive-com/go-app-ticker-wall/v2/leader"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
+	"github.com/massive-com/go-app-ticker-wall/v2/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +30,7 @@ func newServerCmd() *cobra.Command {
 			cfg.LeaderConfig.APIKey = apiKey
 
 			if cfg.LeaderConfig.APIKey == "" {
-				logrus.Error("You must set a Polygon.io API Key. Use the '-a' param to set the key. Eg: tickerwall server -a MY_API_KEY.")
+				logrus.Error("You must set a Massive.com API Key. Use the '-a' param to set the key. Eg: tickerwall server -a MY_API_KEY.")
 				os.Exit(1)
 			}
 

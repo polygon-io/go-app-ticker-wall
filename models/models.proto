@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package models;
-option go_package = "github.com/polygon-io/go-app-tickerwall/models";
+option go_package = "github.com/massive-com/go-app-ticker-wall/v2/models";
 
 // Leader is the exposed endpoint(s) for the leader service.
 service Leader {

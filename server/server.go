@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	leader "github.com/polygon-io/go-app-ticker-wall/leader"
+	leader "github.com/massive-com/go-app-ticker-wall/v2/leader"
 	tombv2 "gopkg.in/tomb.v2"
 )
 

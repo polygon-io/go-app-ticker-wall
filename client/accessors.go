@@ -1,6 +1,6 @@
 package client
 
-import "github.com/polygon-io/go-app-ticker-wall/models"
+import "github.com/massive-com/go-app-ticker-wall/v2/models"
 
 // GetTickers returns all the tickers we have.
 func (t *ClusterClient) GetTickers() []*models.Ticker {

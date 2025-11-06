@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
 	"github.com/sirupsen/logrus"
 )
 
