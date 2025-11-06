@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/polygon-io/go-app-ticker-wall/models"
-	polygon "github.com/polygon-io/go-app-ticker-wall/polygon_client"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
+	massive "github.com/massive-com/go-app-ticker-wall/v2/massive_client"
 	"github.com/sirupsen/logrus"
 	tombv2 "gopkg.in/tomb.v2"
 )
@@ -17,7 +17,7 @@ type Leader struct {
 	config Config
 
 	// Client to fetch data. We should use an interface here to allow more flexibility.
-	DataClient *polygon.Client
+	DataClient *massive.Client
 
 	// This keeps the presentation settings.
 	PresentationSettings *models.PresentationSettings
@@ -48,9 +48,9 @@ func New(cfg *Config) (*Leader, error) {
 		})
 	}
 
-	// Create new Polygon API Client.
+	// Create new Massive API Client.
 	var err error
-	obj.DataClient, err = polygon.NewClient(cfg.APIKey, cfg.Presentation.PerTickUpdates)
+	obj.DataClient, err = massive.NewClient(cfg.APIKey, cfg.Presentation.PerTickUpdates)
 	if err != nil {
 		return nil, err
 	}

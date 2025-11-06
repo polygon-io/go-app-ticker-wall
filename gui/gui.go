@@ -8,11 +8,11 @@ import (
 
 	"github.com/goxjs/gl"
 	"github.com/goxjs/glfw"
-	"github.com/polygon-io/go-app-ticker-wall/client"
-	"github.com/polygon-io/go-app-ticker-wall/fonts"
-	"github.com/polygon-io/go-app-ticker-wall/gui/notifications"
-	"github.com/polygon-io/nanovgo"
-	"github.com/polygon-io/nanovgo/perfgraph"
+	"github.com/massive-com/go-app-ticker-wall/v2/client"
+	"github.com/massive-com/go-app-ticker-wall/v2/fonts"
+	"github.com/massive-com/go-app-ticker-wall/v2/gui/notifications"
+	"github.com/massive-com/nanovgo"
+	"github.com/massive-com/nanovgo/perfgraph"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,7 +59,7 @@ func (g *GUI) Setup() error {
 	window, err := glfw.CreateWindow(
 		int(screen.Width),
 		int(screen.Height),
-		fmt.Sprintf("Polygon Ticker Wall ( INDEX: %d )", screen.Index),
+		fmt.Sprintf("Massive Ticker Wall ( INDEX: %d )", screen.Index),
 		nil, nil,
 	)
 	if err != nil {

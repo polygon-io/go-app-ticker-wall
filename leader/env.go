@@ -1,6 +1,6 @@
 package leader
 
-import "github.com/polygon-io/go-app-ticker-wall/models"
+import "github.com/massive-com/go-app-ticker-wall/v2/models"
 
 // Config handles the default settings, as well as data client auth.
 type Config struct {

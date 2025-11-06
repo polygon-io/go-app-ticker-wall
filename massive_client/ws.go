@@ -1,13 +1,13 @@
-package polygon
+package massive
 
 import (
 	"context"
 	"fmt"
 
-	polygonws "github.com/polygon-io/client-go/websocket"
-	polygonws_models "github.com/polygon-io/client-go/websocket/models"
+	massivews "github.com/massive-com/client-go/v2/websocket"
+	massivews_models "github.com/massive-com/client-go/v2/websocket/models"
 
-	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
 )
 
 func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) error {
@@ -17,9 +17,9 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 
 	defer c.websocketClient.Close()
 
-	topic := polygonws.StocksSecAggs
+	topic := massivews.StocksSecAggs
 	if c.perTickUpdates {
-		topic = polygonws.StocksTrades
+		topic = massivews.StocksTrades
 	}
 
 	if err := c.websocketClient.Subscribe(topic, tickers...); err != nil {
@@ -36,14 +36,14 @@ func (c *Client) ListenForTickerUpdates(ctx context.Context, tickers []string) e
 			}
 
 			switch msg.(type) {
-			case polygonws_models.EquityAgg:
-				agg := msg.(polygonws_models.EquityAgg)
+			case massivews_models.EquityAgg:
+				agg := msg.(massivews_models.EquityAgg)
 				c.PriceUpdates <- &models.PriceUpdate{
 					Ticker: agg.Symbol,
 					Price:  agg.Close,
 				}
-			case polygonws_models.EquityTrade:
-				trade := msg.(polygonws_models.EquityTrade)
+			case massivews_models.EquityTrade:
+				trade := msg.(massivews_models.EquityTrade)
 				c.PriceUpdates <- &models.PriceUpdate{
 					Ticker: trade.Symbol,
 					Price:  trade.Price,

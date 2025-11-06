@@ -2,23 +2,23 @@
   <img src="misc/ticker-wall.gif" />
 </p>
 
-# Polygon.io - Ticker Wall
+# Massive.com - Ticker Wall
 
-The Polygon.io ticker wall is an open source, cross platform, scalable ticker tape. It is meant to be scalable across many machines to eliminate the need for expensive specialty hardware for achieving a scrolling ticker tape. It is cross platform compatible, so it runs on mac, windows or linux ( only mac and linux tested ). All interaction is done via the CLI. There is a gRPC interface for more advanced integrations.
+The Massive.com ticker wall is an open source, cross platform, scalable ticker tape. It is meant to be scalable across many machines to eliminate the need for expensive specialty hardware for achieving a scrolling ticker tape. It is cross platform compatible, so it runs on mac, windows or linux ( only mac and linux tested ). All interaction is done via the CLI. There is a gRPC interface for more advanced integrations.
 
-We use it at the [Polygon.io](https://polygon.io) office, but we also wanted it to be general enough to suite a broad group of needs, so most interactions and settings are configurable.
+We use it at the [Massive.com](https://massive.com) office, but we also wanted it to be general enough to suite a broad group of needs, so most interactions and settings are configurable.
 
 # Getting Started
 
 There are 2 components to a ticker wall cluster. There is 1x Leader and N number of GUIs. The leader can also be run on the same system as a GUI, and there is no minimum for the number of GUIs. You can start with 1 screen, then continue to add more and it will dynamically adjust in real-time.
 
-Download the latest release binary from the [Releases Page](https://github.com/polygon-io/go-app-ticker-wall/releases)
+Download the latest release binary from the [Releases Page](https://github.com/massive-com/go-app-ticker-wall/releases)
 
 **Start the Leader**
 
 We must start the leader so that the GUIs can connect and get their data to display.
 
-`./tickerwall server -a {myPolygonApiKey}`
+`./tickerwall server -a {myMassiveApiKey}`
 
 **Run the GUI**
 

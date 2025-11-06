@@ -3,7 +3,7 @@ package gui
 import (
 	"math"
 
-	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
 )
 
 // TickerOffset determines what the offset should be for this ticker, on this screen.

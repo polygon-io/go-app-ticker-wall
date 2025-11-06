@@ -1,8 +1,8 @@
 package gui
 
 import (
-	"github.com/polygon-io/go-app-ticker-wall/client"
-	"github.com/polygon-io/nanovgo"
+	"github.com/massive-com/go-app-ticker-wall/v2/client"
+	"github.com/massive-com/nanovgo"
 )
 
 func (g *GUI) SystemPanel() {

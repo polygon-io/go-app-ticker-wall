@@ -7,7 +7,7 @@ import (
 	// We are using embed to prevent loading files from disk, which simplifies everything.
 	_ "embed"
 
-	"github.com/polygon-io/nanovgo"
+	"github.com/massive-com/nanovgo"
 )
 
 // nolint:gochecknoglobals // not sure how else to go about this.

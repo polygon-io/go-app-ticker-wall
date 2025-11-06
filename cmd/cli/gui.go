@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/polygon-io/go-app-ticker-wall/gui"
+	"github.com/massive-com/go-app-ticker-wall/v2/gui"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

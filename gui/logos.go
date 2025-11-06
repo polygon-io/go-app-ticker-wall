@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/polygon-io/go-app-ticker-wall/models"
-	"github.com/polygon-io/nanovgo"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
+	"github.com/massive-com/nanovgo"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -67,7 +67,7 @@ func (l *LogoManager) DownloadLogo(ticker *models.Ticker) error {
 
 	// Download URL for logos. ( Deprecated, this will not work for newer ticker symbols ).
 	// nolint:gosec // We are constructing this URL ourselves, it's OK.
-	url := "https://s3.polygon.io/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
+	url := "https://s3.massive.com/logos/" + strings.ToLower(ticker.Ticker) + "/logo.png"
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err

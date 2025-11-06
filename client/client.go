@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/polygon-io/go-app-ticker-wall/models"
+	"github.com/massive-com/go-app-ticker-wall/v2/models"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	tombv2 "gopkg.in/tomb.v2"
