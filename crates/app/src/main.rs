@@ -99,7 +99,7 @@ struct GuiArgs {
     screen_height: i32,
 
     /// Window width in pixels.
-    #[arg(short = 'x', long, default_value_t = 1600)]
+    #[arg(short = 'x', long, default_value_t = 1920)]
     screen_width: i32,
 
     /// Index of this screen in the wall (used for left-to-right ordering).
@@ -130,7 +130,7 @@ struct ServerArgs {
     scroll_speed: i32,
 
     /// Ticker box width in pixels.
-    #[arg(short = 'w', long, default_value_t = 1200)]
+    #[arg(short = 'w', long, default_value_t = 1000)]
     ticker_box_width: i32,
 
     /// Notification animation duration in milliseconds.
@@ -374,7 +374,7 @@ fn print_snapshot(snapshot: &tickerwall_proto::Snapshot) {
 /// Default presentation settings (mirror the Go CLI defaults).
 fn default_settings() -> PresentationSettings {
     PresentationSettings {
-        ticker_box_width: 1200,
+        ticker_box_width: 1000,
         scroll_speed: 8,
         up_color: Some(rgba(51, 255, 51, 255)),
         down_color: Some(rgba(255, 51, 51, 255)),
