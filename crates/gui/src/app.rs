@@ -212,11 +212,20 @@ impl App {
             );
             let screen_offset = cluster.screen_global_offset(&frame.screen.uuid);
 
+            // Center the primary tape in the space above the movers strip (or the
+            // whole window when the strip is hidden), not the whole window.
+            let showing_movers = settings.show_movers && !frame.movers.is_empty();
+            let content_height = if showing_movers {
+                frame.screen.height as f32 - draw::movers_tape_height(frame.screen.height as f32)
+            } else {
+                frame.screen.height as f32
+            };
+
             draw::render_tickers(
                 &mut state.canvas,
                 &state.fonts,
                 settings,
-                &frame.screen,
+                content_height,
                 &frame.tickers,
                 global,
                 screen_offset,
@@ -224,7 +233,7 @@ impl App {
             );
 
             // Secondary gainers/losers tape at the bottom, on its own speed.
-            if settings.show_movers && !frame.movers.is_empty() {
+            if showing_movers {
                 let movers_global = layout::global_offset(
                     layout::now_nanos(),
                     settings.movers_scroll_speed,

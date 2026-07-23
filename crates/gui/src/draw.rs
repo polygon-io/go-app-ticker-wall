@@ -8,8 +8,12 @@ use crate::fonts::Fonts;
 use crate::layout::{self, VisibleTicker};
 
 // Secondary "market movers" tape (pinned to the bottom of each screen).
-/// Pixel width of one mover entry on the secondary tape.
-pub const MOVERS_BOX_WIDTH: i32 = 680;
+/// Pixel width of one mover entry on the secondary tape (fixed, so entries have a
+/// consistent rhythm and the dividers are evenly spaced).
+pub const MOVERS_BOX_WIDTH: i32 = 620;
+/// Fixed font size for mover entries (only shrinks to fit an unusually short
+/// strip), so an entry looks the same regardless of screen height.
+const MOVERS_FONT_SIZE: f32 = 46.0;
 /// Tape height as a fraction of screen height, clamped to a sane pixel range.
 const MOVERS_TAPE_HEIGHT_FRAC: f32 = 0.20;
 const MOVERS_TAPE_MIN_H: f32 = 70.0;
@@ -20,13 +24,14 @@ pub fn movers_tape_height(screen_height: f32) -> f32 {
     (screen_height * MOVERS_TAPE_HEIGHT_FRAC).clamp(MOVERS_TAPE_MIN_H, MOVERS_TAPE_MAX_H)
 }
 
-// Ticker box geometry (from the Go constants).
-const TICKER_BOX_HEIGHT: f32 = 240.0;
+// Ticker box geometry. Sized so the box + movers strip both fit the 300px
+// production screen height with margin (fonts scaled with the box height).
+const TICKER_BOX_HEIGHT: f32 = 200.0;
 const TICKER_BOX_MARGIN: f32 = 30.0;
 const TICKER_BOX_PADDING: f32 = 50.0;
 const TICKER_BOX_BORDER_RADIUS: f32 = 8.0;
-const UPPER_ROW_FONT_SIZE: f32 = 96.0;
-const BOTTOM_ROW_FONT_SIZE: f32 = 58.0;
+const UPPER_ROW_FONT_SIZE: f32 = 80.0;
+const BOTTOM_ROW_FONT_SIZE: f32 = 48.0;
 const MAX_COMPANY_NAME_CHARS: usize = 14;
 
 // Full-bleed graph: opacity of the translucent area fill under the price line,
@@ -43,12 +48,15 @@ pub fn color_of(c: &Option<Rgba>, fallback: Color) -> Color {
 }
 
 /// Render every visible ticker for this screen.
+/// `content_height` is the vertical space available to the primary tape (the
+/// screen height minus the movers strip when it's shown); the ticker boxes are
+/// centered within it rather than within the whole window.
 #[allow(clippy::too_many_arguments)]
 pub fn render_tickers<T: Renderer>(
     canvas: &mut Canvas<T>,
     fonts: &Fonts,
     settings: &PresentationSettings,
-    screen: &Screen,
+    content_height: f32,
     tickers: &[Ticker],
     global_offset: f32,
     screen_offset: f32,
@@ -63,7 +71,7 @@ pub fn render_tickers<T: Renderer>(
     );
     for VisibleTicker { index, x } in visible {
         if let Some(ticker) = tickers.get(index) {
-            render_ticker(canvas, fonts, settings, screen, ticker, x);
+            render_ticker(canvas, fonts, settings, content_height, ticker, x);
         }
     }
 }
@@ -71,10 +79,10 @@ pub fn render_tickers<T: Renderer>(
 fn render_ticker_bg<T: Renderer>(
     canvas: &mut Canvas<T>,
     settings: &PresentationSettings,
-    screen: &Screen,
+    content_height: f32,
     left_offset: f32,
 ) {
-    let top = (screen.height as f32 / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
+    let top = (content_height / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
     let left = left_offset + (TICKER_BOX_MARGIN / 2.0);
     let box_width = settings.ticker_box_width as f32 - TICKER_BOX_MARGIN;
 
@@ -88,14 +96,14 @@ fn render_ticker<T: Renderer>(
     canvas: &mut Canvas<T>,
     fonts: &Fonts,
     settings: &PresentationSettings,
-    screen: &Screen,
+    content_height: f32,
     ticker: &Ticker,
     ticker_offset: f32,
 ) {
-    render_ticker_bg(canvas, settings, screen, ticker_offset);
+    render_ticker_bg(canvas, settings, content_height, ticker_offset);
 
     // Box interior geometry (matches render_ticker_bg).
-    let box_top = (screen.height as f32 / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
+    let box_top = (content_height / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
     let box_left = ticker_offset + (TICKER_BOX_MARGIN / 2.0);
     let box_width = settings.ticker_box_width as f32 - TICKER_BOX_MARGIN;
 
@@ -144,10 +152,11 @@ fn render_ticker<T: Renderer>(
     bottom_paint.set_text_align(Align::Left);
     let _ = canvas.fill_text(offset_left, lower_row_top, &name, &bottom_paint);
 
-    // Change: +diff (+pct%) lower-right, directional color.
+    // Change: +diff (+pct%) lower-right. White — the graph behind the box already
+    // supplies the up/down color, so a colored value here is redundant.
     let price_diff = ticker.price - ticker.previous_close_price;
     let change = format!("{:+.2} ({:+.2}%)", price_diff, ticker.price_change_percentage);
-    let mut change_paint = Paint::color(directional);
+    let mut change_paint = Paint::color(font_color);
     change_paint.set_font(&[fonts.light]);
     change_paint.set_font_size(BOTTOM_ROW_FONT_SIZE);
     change_paint.set_text_baseline(Baseline::Middle);
@@ -226,12 +235,6 @@ fn draw_graph<T: Renderer>(
     let mut stroke = Paint::color(color);
     stroke.set_line_width(6.0);
     canvas.stroke_path(&line, &stroke);
-
-    // Endpoint dot at the latest price.
-    let (lx, ly) = xy(points - 1);
-    let mut dot = Path::new();
-    dot.circle(lx, ly, 8.0);
-    canvas.fill_path(&dot, &Paint::color(color));
 }
 
 /// Small FPS readout pinned to the top-left corner. Shown only when the
@@ -315,10 +318,16 @@ fn draw_mover<T: Renderer>(
     tape_height: f32,
 ) {
     let mid_y = strip_top + tape_height / 2.0;
-    let font_size = (tape_height * 0.42).clamp(20.0, 72.0);
-    let pad = font_size * 0.9;
+    // Fixed font size (only shrinks on an unusually short strip) keeps every entry
+    // the same regardless of screen height.
+    let font_size = MOVERS_FONT_SIZE.min(tape_height * 0.5);
     let gap = font_size * 0.5;
-    let box_right = x + MOVERS_BOX_WIDTH as f32;
+
+    // Divider at this entry's left edge, separating it from the previous one.
+    let div_margin = tape_height * 0.24;
+    let mut divider = Path::new();
+    divider.rect(x, strip_top + div_margin, 3.0, tape_height - div_margin * 2.0);
+    canvas.fill_path(&divider, &Paint::color(Color::rgba(255, 255, 255, 60)));
 
     let dir_color = if mover.todays_change_percentage < 0.0 {
         color_of(&settings.down_color, Color::rgb(255, 51, 51))
@@ -327,36 +336,50 @@ fn draw_mover<T: Renderer>(
     };
     let font_color = color_of(&settings.font_color, Color::white());
 
-    // Symbol (bold, left).
+    // Tight group: SYMBOL  price  change%, centered within the fixed-width cell so
+    // the left and right margins (to the dividers) are equal. Measure all three
+    // first, then place them at a running cursor.
+    let price = format!("${:.2}", mover.price);
+    let change = format!("{:+.2}%", mover.todays_change_percentage);
+    let gap_sym = gap * 1.3;
+
     let mut sym = Paint::color(font_color);
     sym.set_font(&[fonts.bold]);
     sym.set_font_size(font_size);
     sym.set_text_baseline(Baseline::Middle);
     sym.set_text_align(Align::Left);
-    let _ = canvas.fill_text(x + pad, mid_y, &mover.symbol, &sym);
 
-    // Change % (bold, directional) anchored to the right edge of the box.
-    let change = format!("{:+.2}%", mover.todays_change_percentage);
+    let mut pr = Paint::color(font_color);
+    pr.set_font(&[fonts.light]);
+    pr.set_font_size(font_size);
+    pr.set_text_baseline(Baseline::Middle);
+    pr.set_text_align(Align::Left);
+
     let mut chg = Paint::color(dir_color);
     chg.set_font(&[fonts.bold]);
     chg.set_font_size(font_size);
     chg.set_text_baseline(Baseline::Middle);
-    chg.set_text_align(Align::Right);
-    let _ = canvas.fill_text(box_right - pad, mid_y, &change, &chg);
+    chg.set_text_align(Align::Left);
 
-    // Price (light) right-aligned just left of the change %. Measuring the change
-    // width means a long (3+ digit) percentage can never overlap the price.
-    let change_w = canvas
-        .measure_text(0.0, 0.0, &change, &chg)
+    let sym_w = measure_w(canvas, &mover.symbol, &sym);
+    let price_w = measure_w(canvas, &price, &pr);
+    let change_w = measure_w(canvas, &change, &chg);
+    let total = sym_w + gap_sym + price_w + gap + change_w;
+
+    let mut cursor = x + (MOVERS_BOX_WIDTH as f32 - total) / 2.0;
+    let _ = canvas.fill_text(cursor, mid_y, &mover.symbol, &sym);
+    cursor += sym_w + gap_sym;
+    let _ = canvas.fill_text(cursor, mid_y, &price, &pr);
+    cursor += price_w + gap;
+    let _ = canvas.fill_text(cursor, mid_y, &change, &chg);
+}
+
+/// Advance width of `text` under `paint`, for laying out text left-to-right.
+fn measure_w<T: Renderer>(canvas: &mut Canvas<T>, text: &str, paint: &Paint) -> f32 {
+    canvas
+        .measure_text(0.0, 0.0, text, paint)
         .map(|m| m.width())
-        .unwrap_or(0.0);
-    let price = format!("{:.2}", mover.price);
-    let mut pr = Paint::color(font_color);
-    pr.set_font(&[fonts.light]);
-    pr.set_font_size(font_size * 0.85);
-    pr.set_text_baseline(Baseline::Middle);
-    pr.set_text_align(Align::Right);
-    let _ = canvas.fill_text(box_right - pad - change_w - gap, mid_y, &price, &pr);
+        .unwrap_or(0.0)
 }
 
 /// Centered red panel shown when the client is not connected to the leader.
