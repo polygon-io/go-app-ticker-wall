@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package tickerwall.v1;
+
+// Leader is the control + streaming surface a GUI (and the CLI) talks to.
+//
+// This is the redesigned protocol for the Rust rewrite. Notable changes vs the
+// original models.proto:
+//   * `Update` is a real `oneof` instead of an int tag + parallel optional fields.
+//   * Presentation settings are patched with an explicit optional-field message so
+//     partial updates merge instead of clobbering unset fields to defaults.
+//   * Dynamic ticker add/remove are first-class RPCs the leader actually emits.
+//   * Announcement types/animations are enums rather than bare int32s.
+service Leader {
+  // Join the screen cluster. The leader streams state changes back until the
+  // client disconnects. The first message after joining is always a Cluster
+  // update reflecting the newly-joined screen.
+  rpc JoinCluster(JoinRequest) returns (stream Update);
+
+  // One-shot snapshot of current cluster + tickers (used on connect and by
+  // `describe`).
+  rpc GetSnapshot(Empty) returns (Snapshot);
+
+  // Merge a partial settings patch into the cluster settings and broadcast the
+  // resolved settings to all screens.
+  rpc UpdateSettings(SettingsPatch) returns (PresentationSettings);
+
+  // Broadcast an announcement. The leader owns the display timestamp.
+  rpc Announce(AnnounceRequest) returns (Announcement);
+
+  // Update a screen's geometry after it has joined (e.g. on resize).
+  rpc UpdateScreen(Screen) returns (Screen);
+
+  // Add / remove a ticker at runtime. Broadcast to all screens.
+  rpc AddTicker(TickerSymbol) returns (Empty);
+  rpc RemoveTicker(TickerSymbol) returns (Empty);
+}
+
+// ---- Core domain messages ------------------------------------------------
+
+message Ticker {
+  string symbol = 1;
+  string company_name = 2;
+  int64 outstanding_shares = 3;
+  double price = 4;
+  double market_cap = 5;
+  double price_change_percentage = 6;
+  double previous_close_price = 7;
+  int32 index = 8; // tape position, assigned by sorting symbols ascending
+  repeated Agg aggs = 9;
+}
+
+// One aggregate bar used to draw the mini sparkline.
+message Agg {
+  double price = 1;
+  int32 volume = 2;
+  int64 timestamp = 3;
+}
+
+message PriceUpdate {
+  string symbol = 1;
+  double price = 2;
+}
+
+message RGBA {
+  int32 red = 1;
+  int32 green = 2;
+  int32 blue = 3;
+  int32 alpha = 4;
+}
+
+message Screen {
+  string uuid = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 index = 4;
+}
+
+message ScreenCluster {
+  PresentationSettings settings = 1;
+  repeated Screen screens = 2;
+}
+
+// Fully-resolved presentation settings (the cluster's current state).
+message PresentationSettings {
+  int32 ticker_box_width = 1;
+  int32 scroll_speed = 2;
+  RGBA up_color = 3;
+  RGBA down_color = 4;
+  RGBA bg_color = 5;
+  RGBA font_color = 6;
+  RGBA ticker_box_bg_color = 7;
+  bool show_logos = 8;
+  bool show_fps = 9;
+  int32 animation_duration_ms = 10;
+  bool per_tick_updates = 11;
+}
+
+// A partial settings update. Only set fields are applied; unset fields are left
+// untouched. Scalars use proto3 `optional` so "unset" is distinct from "zero".
+message SettingsPatch {
+  optional int32 ticker_box_width = 1;
+  optional int32 scroll_speed = 2;
+  RGBA up_color = 3; // message fields already track presence
+  RGBA down_color = 4;
+  RGBA bg_color = 5;
+  RGBA font_color = 6;
+  RGBA ticker_box_bg_color = 7;
+  optional bool show_logos = 8;
+  optional bool show_fps = 9;
+  optional int32 animation_duration_ms = 10;
+  optional bool per_tick_updates = 11;
+}
+
+enum AnnouncementType {
+  ANNOUNCEMENT_TYPE_INFO = 0;
+  ANNOUNCEMENT_TYPE_DANGER = 1;
+  ANNOUNCEMENT_TYPE_SUCCESS = 2;
+}
+
+enum AnnouncementAnimation {
+  ANNOUNCEMENT_ANIMATION_ELASTIC = 0;
+  ANNOUNCEMENT_ANIMATION_BOUNCE = 1;
+  ANNOUNCEMENT_ANIMATION_EASE = 2;
+  ANNOUNCEMENT_ANIMATION_BACK = 3;
+}
+
+message Announcement {
+  string message = 1;
+  AnnouncementType type = 2;
+  int64 show_at_timestamp_ms = 3; // set by the leader
+  int64 lifespan_ms = 4;
+  AnnouncementAnimation animation = 5;
+}
+
+// Announce input: like Announcement but without the leader-owned timestamp.
+message AnnounceRequest {
+  string message = 1;
+  AnnouncementType type = 2;
+  int64 lifespan_ms = 3;
+  AnnouncementAnimation animation = 4;
+}
+
+// ---- Stream + snapshot envelopes -----------------------------------------
+
+message JoinRequest {
+  Screen screen = 1;
+}
+
+message Snapshot {
+  ScreenCluster cluster = 1;
+  repeated Ticker tickers = 2;
+}
+
+message TickerSymbol {
+  string symbol = 1;
+}
+
+// A single state change streamed leader -> GUI.
+message Update {
+  oneof kind {
+    ScreenCluster cluster = 1;
+    Ticker ticker_upserted = 2; // added or updated (client dedupes by symbol)
+    string ticker_removed = 3;  // symbol
+    PriceUpdate price = 4;
+    Announcement announcement = 5;
+    PresentationSettings settings = 6;
+  }
+}
+
+message Empty {}

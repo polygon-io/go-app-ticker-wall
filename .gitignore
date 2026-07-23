@@ -16,3 +16,6 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 logos/
+
+# Rust build output (Cargo.lock is committed for the workspace binary)
+/target/

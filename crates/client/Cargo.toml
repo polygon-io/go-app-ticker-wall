@@ -1,0 +1,17 @@
+[package]
+name = "tickerwall-client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tickerwall-proto.workspace = true
+tonic.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+tokio-util.workspace = true
+futures.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+uuid.workspace = true
+parking_lot.workspace = true

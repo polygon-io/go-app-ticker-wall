@@ -1,0 +1,23 @@
+[package]
+name = "tickerwall-data"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tickerwall-proto.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+tokio-util.workspace = true
+futures-util.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+tokio-util.workspace = true

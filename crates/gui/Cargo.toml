@@ -1,0 +1,19 @@
+[package]
+name = "tickerwall-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tickerwall-proto.workspace = true
+tickerwall-client.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+femtovg = "0.26"
+winit = "0.30"
+glutin = "0.32"
+glutin-winit = "0.5"
+raw-window-handle = "0.6"

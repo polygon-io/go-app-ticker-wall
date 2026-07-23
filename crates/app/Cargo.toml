@@ -1,0 +1,26 @@
+[package]
+name = "tickerwall-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "tickerwall"
+path = "src/main.rs"
+
+[dependencies]
+tickerwall-proto.workspace = true
+tickerwall-leader.workspace = true
+tickerwall-client.workspace = true
+tickerwall-gui.workspace = true
+tonic.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+serde_yaml.workspace = true
