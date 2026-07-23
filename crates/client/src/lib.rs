@@ -38,6 +38,17 @@ pub enum GrpcStatus {
     Disconnected,
 }
 
+/// Everything the render loop needs for a single frame, captured in one lock
+/// acquisition (see [`ClusterClient::render_snapshot`]).
+pub struct RenderSnapshot {
+    pub screen: Screen,
+    pub cluster: Option<ScreenCluster>,
+    pub tickers: Vec<Ticker>,
+    pub status: GrpcStatus,
+    /// Announcements received since the previous frame (drained from the queue).
+    pub new_announcements: Vec<Announcement>,
+}
+
 /// Mutable state kept in sync with the leader. Guarded by a single lock so the
 /// render loop can cheaply snapshot it each frame.
 struct Inner {
@@ -260,6 +271,22 @@ impl ClusterClient {
     }
 
     // ---- read accessors ---------------------------------------------------
+
+    /// Capture all render-loop state under a single lock, draining any queued
+    /// announcements. The render loop calls this once per frame instead of the
+    /// separate `screen`/`settings`/`cluster`/`tickers`/`status`/
+    /// `drain_announcements` accessors (~7 lock acquisitions → 1), which reduces
+    /// contention with the price-update writer under a busy feed.
+    pub fn render_snapshot(&self) -> RenderSnapshot {
+        let mut inner = self.inner.write();
+        RenderSnapshot {
+            screen: inner.screen.clone(),
+            cluster: inner.cluster.clone(),
+            tickers: inner.tickers.clone(),
+            status: inner.status,
+            new_announcements: std::mem::take(&mut inner.announcements),
+        }
+    }
 
     pub fn tickers(&self) -> Vec<Ticker> {
         self.inner.read().tickers.clone()

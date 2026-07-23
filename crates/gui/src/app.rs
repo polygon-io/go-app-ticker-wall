@@ -141,55 +141,60 @@ impl App {
 
         state.canvas.set_size(pw, ph, dpi);
 
-        let screen = self.client.screen();
-        let settings = self.client.settings();
-        let cluster = self.client.cluster();
+        // One lock acquisition for all shared state this frame.
+        let frame = self.client.render_snapshot();
+
+        // Feed any newly-arrived announcements into the manager.
+        for announcement in frame.new_announcements {
+            self.notifications.add(announcement);
+        }
+
+        let settings = frame.cluster.as_ref().and_then(|c| c.settings.as_ref());
 
         // Background (config color if we have settings, else black).
         let bg = settings
-            .as_ref()
             .map(|s| draw::color_of(&s.bg_color, Color::black()))
             .unwrap_or_else(Color::black);
         state.canvas.clear_rect(0, 0, pw, ph, bg);
 
-        if let (Some(settings), Some(cluster)) = (settings.as_ref(), cluster.as_ref()) {
-            let tickers = self.client.tickers();
+        if let (Some(settings), Some(cluster)) = (settings, frame.cluster.as_ref()) {
             let global = layout::global_offset(
                 layout::now_nanos(),
                 settings.scroll_speed,
                 settings.ticker_box_width,
-                tickers.len(),
+                frame.tickers.len(),
             );
-            let screen_offset = cluster.screen_global_offset(&screen.uuid);
+            let screen_offset = cluster.screen_global_offset(&frame.screen.uuid);
 
             draw::render_tickers(
                 &mut state.canvas,
                 &state.fonts,
                 settings,
-                &screen,
-                &tickers,
+                &frame.screen,
+                &frame.tickers,
                 global,
                 screen_offset,
-                screen.width as f32,
+                frame.screen.width as f32,
             );
 
-            // Drain and render announcements.
-            for announcement in self.client.drain_announcements() {
-                self.notifications.add(announcement);
-            }
             self.notifications
-                .render(&mut state.canvas, &state.fonts, settings, cluster, &screen);
+                .render(&mut state.canvas, &state.fonts, settings, cluster, &frame.screen);
         }
 
         // Overlay the system panel when not connected.
-        if self.client.status() != GrpcStatus::Connected {
-            let message = match self.client.status() {
+        if frame.status != GrpcStatus::Connected {
+            let message = match frame.status {
                 GrpcStatus::Reconnecting => "Reconnecting to Leader..",
                 GrpcStatus::Disconnected => "Disconnected from Leader..",
                 GrpcStatus::Connected => "",
             };
-            state.canvas.set_size(pw, ph, dpi);
-            draw::system_panel(&mut state.canvas, &state.fonts, screen.width as f32, &screen, message);
+            draw::system_panel(
+                &mut state.canvas,
+                &state.fonts,
+                frame.screen.width as f32,
+                &frame.screen,
+                message,
+            );
         }
 
         state.canvas.flush_to_output(());
