@@ -4,6 +4,7 @@
 
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::time::Instant;
 
 use femtovg::{renderer::OpenGl, Canvas, Color};
 use glutin::config::{ConfigTemplateBuilder, GlConfig};
@@ -36,11 +37,43 @@ struct RenderState {
     last_logical_size: (i32, i32),
 }
 
+/// Rolling frames-per-second counter. Averages over ~half a second so the
+/// on-screen readout is stable instead of flickering every frame.
+struct FpsCounter {
+    last: Option<Instant>,
+    accum_secs: f32,
+    accum_frames: u32,
+    display: f32,
+}
+
+impl FpsCounter {
+    fn new() -> Self {
+        Self { last: None, accum_secs: 0.0, accum_frames: 0, display: 0.0 }
+    }
+
+    /// Record a frame boundary and return the current averaged FPS.
+    fn tick(&mut self) -> f32 {
+        let now = Instant::now();
+        if let Some(last) = self.last {
+            self.accum_secs += now.duration_since(last).as_secs_f32();
+            self.accum_frames += 1;
+            if self.accum_secs >= 0.5 {
+                self.display = self.accum_frames as f32 / self.accum_secs;
+                self.accum_secs = 0.0;
+                self.accum_frames = 0;
+            }
+        }
+        self.last = Some(now);
+        self.display
+    }
+}
+
 pub struct App {
     client: Arc<ClusterClient>,
     notifications: Notifications,
     state: Option<RenderState>,
     fullscreen: bool,
+    fps: FpsCounter,
 }
 
 impl App {
@@ -50,6 +83,7 @@ impl App {
             notifications: Notifications::new(),
             state: None,
             fullscreen,
+            fps: FpsCounter::new(),
         }
     }
 
@@ -144,6 +178,10 @@ impl App {
         // One lock acquisition for all shared state this frame.
         let frame = self.client.render_snapshot();
 
+        // Always measure frame rate (cheap) so the meter is accurate the moment
+        // `show_fps` is toggled on.
+        let fps = self.fps.tick();
+
         // Feed any newly-arrived announcements into the manager.
         for announcement in frame.new_announcements {
             self.notifications.add(announcement);
@@ -179,6 +217,11 @@ impl App {
 
             self.notifications
                 .render(&mut state.canvas, &state.fonts, settings, cluster, &frame.screen);
+
+            // FPS meter on top of everything (incl. any notification banner).
+            if settings.show_fps {
+                draw::fps_meter(&mut state.canvas, &state.fonts, frame.screen.height as f32, fps);
+            }
         }
 
         // Overlay the system panel when not connected.

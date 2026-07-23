@@ -203,6 +203,33 @@ fn draw_graph<T: Renderer>(
     canvas.fill_path(&dot, &Paint::color(color));
 }
 
+/// Small FPS readout pinned to the top-left corner. Shown only when the
+/// `show_fps` presentation setting is enabled. Sizes itself off the screen
+/// height so it stays legible from a 300px dev window up to a 1080p wall.
+pub fn fps_meter<T: Renderer>(
+    canvas: &mut Canvas<T>,
+    fonts: &Fonts,
+    screen_height: f32,
+    fps: f32,
+) {
+    let font_size = (screen_height * 0.06).clamp(20.0, 64.0);
+    let pad = font_size * 0.4;
+    let text = format!("{fps:.0} FPS");
+    let box_w = font_size * 5.0;
+    let box_h = font_size + pad * 2.0;
+
+    let mut path = Path::new();
+    path.rounded_rect(pad, pad, box_w, box_h, 6.0);
+    canvas.fill_path(&path, &Paint::color(Color::rgba(0, 0, 0, 160)));
+
+    let mut paint = Paint::color(Color::rgb(0, 255, 0));
+    paint.set_font(&[fonts.bold]);
+    paint.set_font_size(font_size);
+    paint.set_text_align(Align::Left);
+    paint.set_text_baseline(Baseline::Middle);
+    let _ = canvas.fill_text(pad * 2.0, pad + box_h / 2.0, &text, &paint);
+}
+
 /// Centered red panel shown when the client is not connected to the leader.
 pub fn system_panel<T: Renderer>(
     canvas: &mut Canvas<T>,

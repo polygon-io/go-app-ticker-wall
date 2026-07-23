@@ -136,6 +136,10 @@ struct ServerArgs {
     /// Update on every trade (true) vs once per second (false).
     #[arg(long, default_value_t = true)]
     per_tick_updates: bool,
+
+    /// Show an FPS meter on each screen.
+    #[arg(long, default_value_t = false)]
+    show_fps: bool,
 }
 
 #[derive(Args)]
@@ -184,6 +188,7 @@ async fn run_server(args: ServerArgs) -> Result<()> {
     settings.ticker_box_width = args.ticker_box_width;
     settings.animation_duration_ms = args.animation_duration;
     settings.per_tick_updates = args.per_tick_updates;
+    settings.show_fps = args.show_fps;
 
     let tickers = args
         .tickers
