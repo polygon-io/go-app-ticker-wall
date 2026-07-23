@@ -189,11 +189,19 @@ impl App {
 
         let settings = frame.cluster.as_ref().and_then(|c| c.settings.as_ref());
 
-        // Background (config color if we have settings, else black).
+        // Background (config color if we have settings, else black). Clear the
+        // whole framebuffer in physical pixels, before the DPI transform below.
         let bg = settings
             .map(|s| draw::color_of(&s.bg_color, Color::black()))
             .unwrap_or_else(Color::black);
         state.canvas.clear_rect(0, 0, pw, ph, bg);
+
+        // femtovg draws in physical pixels; our whole layout is in logical
+        // (density-independent) units. Scale by the device pixel ratio so logical
+        // coordinates fill the physical surface. Without this, everything renders
+        // at 1/dpi scale in the top-left on any HiDPI (e.g. Retina) display.
+        state.canvas.reset_transform();
+        state.canvas.scale(dpi, dpi);
 
         if let (Some(settings), Some(cluster)) = (settings, frame.cluster.as_ref()) {
             let global = layout::global_offset(
@@ -214,6 +222,26 @@ impl App {
                 screen_offset,
                 frame.screen.width as f32,
             );
+
+            // Secondary gainers/losers tape at the bottom, on its own speed.
+            if settings.show_movers && !frame.movers.is_empty() {
+                let movers_global = layout::global_offset(
+                    layout::now_nanos(),
+                    settings.movers_scroll_speed,
+                    draw::MOVERS_BOX_WIDTH,
+                    frame.movers.len(),
+                );
+                draw::render_movers_tape(
+                    &mut state.canvas,
+                    &state.fonts,
+                    settings,
+                    &frame.screen,
+                    cluster,
+                    &frame.movers,
+                    movers_global,
+                    screen_offset,
+                );
+            }
 
             self.notifications
                 .render(&mut state.canvas, &state.fonts, settings, cluster, &frame.screen);

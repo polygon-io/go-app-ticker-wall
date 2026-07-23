@@ -8,7 +8,23 @@ use anyhow::{Context, Result};
 use chrono::{Datelike, NaiveDate, TimeZone, Utc, Weekday};
 use chrono_tz::America::New_York;
 use serde::Deserialize;
-use tickerwall_proto::{Agg, Ticker};
+use tickerwall_proto::{Agg, Mover, Ticker};
+
+/// Which side of the top-movers snapshot to fetch.
+#[derive(Clone, Copy, Debug)]
+pub enum MoverDirection {
+    Gainers,
+    Losers,
+}
+
+impl MoverDirection {
+    fn path(self) -> &'static str {
+        match self {
+            MoverDirection::Gainers => "gainers",
+            MoverDirection::Losers => "losers",
+        }
+    }
+}
 
 /// Default REST base host (mirrors `massive-com/client-go`).
 pub const DEFAULT_REST_BASE: &str = "https://api.massive.com";
@@ -139,6 +155,32 @@ impl MarketClient {
             })
             .collect())
     }
+
+    /// Top market movers (gainers or losers) for US stocks. Returns them in the
+    /// API's order (biggest move first). `GET /v2/snapshot/locale/us/markets/
+    /// stocks/{direction}`.
+    pub async fn get_market_movers(&self, direction: MoverDirection) -> Result<Vec<Mover>> {
+        let url = format!(
+            "{}/v2/snapshot/locale/us/markets/stocks/{}",
+            self.rest_base,
+            direction.path()
+        );
+        let resp: MoversResponse = self.get_json(&url).await?;
+        Ok(resp
+            .tickers
+            .into_iter()
+            .map(|t| {
+                // Prefer the last trade price; fall back to today's close.
+                let price = if t.last_trade.p != 0.0 { t.last_trade.p } else { t.day.c };
+                Mover {
+                    symbol: t.ticker,
+                    price,
+                    todays_change: t.todays_change,
+                    todays_change_percentage: t.todays_change_perc,
+                }
+            })
+            .collect())
+    }
 }
 
 /// Company metadata returned by [`MarketClient::get_ticker_details`].
@@ -193,6 +235,38 @@ struct LastTradeResponse {
 struct LastTradeResult {
     #[serde(default, rename = "p")]
     price: f64,
+}
+
+#[derive(Deserialize)]
+struct MoversResponse {
+    #[serde(default)]
+    tickers: Vec<MoverResult>,
+}
+
+#[derive(Deserialize)]
+struct MoverResult {
+    #[serde(default)]
+    ticker: String,
+    #[serde(default, rename = "todaysChange")]
+    todays_change: f64,
+    #[serde(default, rename = "todaysChangePerc")]
+    todays_change_perc: f64,
+    #[serde(default, rename = "lastTrade")]
+    last_trade: MoverTrade,
+    #[serde(default)]
+    day: MoverDay,
+}
+
+#[derive(Deserialize, Default)]
+struct MoverTrade {
+    #[serde(default)]
+    p: f64,
+}
+
+#[derive(Deserialize, Default)]
+struct MoverDay {
+    #[serde(default)]
+    c: f64,
 }
 
 #[derive(Deserialize)]

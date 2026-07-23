@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 use tickerwall_proto::leader_client::LeaderClient;
 use tickerwall_proto::{
-    Announcement, Empty, JoinRequest, PresentationSettings, PriceUpdate, Screen, ScreenCluster,
-    Ticker, Update, UpdateKind,
+    Announcement, Empty, JoinRequest, Mover, PresentationSettings, PriceUpdate, Screen,
+    ScreenCluster, Ticker, Update, UpdateKind,
 };
 
 use tonic::transport::Channel;
@@ -47,6 +47,7 @@ pub struct RenderSnapshot {
     pub status: GrpcStatus,
     /// Announcements received since the previous frame (drained from the queue).
     pub new_announcements: Vec<Announcement>,
+    pub movers: Vec<Mover>,
 }
 
 /// Mutable state kept in sync with the leader. Guarded by a single lock so the
@@ -57,6 +58,7 @@ struct Inner {
     cluster: Option<ScreenCluster>,
     status: GrpcStatus,
     announcements: Vec<Announcement>,
+    movers: Vec<Mover>,
 }
 
 /// Keeps the local client state in sync with the leader.
@@ -87,6 +89,7 @@ impl ClusterClient {
                 cluster: None,
                 status: GrpcStatus::Disconnected,
                 announcements: Vec::new(),
+                movers: Vec::new(),
             }),
             resize_tx: Mutex::new(None),
         })
@@ -169,6 +172,7 @@ impl ClusterClient {
             let mut tickers = snapshot.tickers;
             tickerwall_proto::sort_and_tag_tickers(&mut tickers);
             guard.tickers = tickers;
+            guard.movers = snapshot.movers.map(|m| m.movers).unwrap_or_default();
         }
 
         // Open the update stream.
@@ -221,6 +225,9 @@ impl ClusterClient {
                         })
                     }
                 }
+            }
+            UpdateKind::Movers(m) => {
+                self.inner.write().movers = m.movers;
             }
         }
     }
@@ -285,6 +292,7 @@ impl ClusterClient {
             tickers: inner.tickers.clone(),
             status: inner.status,
             new_announcements: std::mem::take(&mut inner.announcements),
+            movers: inner.movers.clone(),
         }
     }
 

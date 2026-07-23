@@ -11,8 +11,8 @@ use tonic::{Request, Response, Status};
 use tracing::{info, warn};
 
 use tickerwall_proto::{
-    leader_server, AnnounceRequest, Announcement, Empty, JoinRequest, PresentationSettings, Screen,
-    SettingsPatch, Snapshot, TickerSymbol, Update, UpdateKind as Kind,
+    leader_server, AnnounceRequest, Announcement, Empty, JoinRequest, MarketMovers,
+    PresentationSettings, Screen, SettingsPatch, Snapshot, TickerSymbol, Update, UpdateKind as Kind,
 };
 
 use crate::{now_ms, LeaderState, Leader, AGG_RANGE_MINUTES, ANNOUNCEMENT_LEAD_MS};
@@ -96,6 +96,7 @@ impl leader_server::Leader for Leader {
         Ok(Response::new(Snapshot {
             cluster: Some(st.cluster()),
             tickers: st.tickers.clone(),
+            movers: Some(MarketMovers { movers: st.movers.clone() }),
         }))
     }
 

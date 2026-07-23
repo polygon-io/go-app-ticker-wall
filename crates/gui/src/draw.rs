@@ -2,10 +2,23 @@
 //! system/status panel. Ports `gui/tickers.go` and `gui/system.go` onto femtovg.
 
 use femtovg::{Align, Baseline, Canvas, Color, Paint, Path, Renderer};
-use tickerwall_proto::{PresentationSettings, Rgba, Screen, Ticker};
+use tickerwall_proto::{Mover, PresentationSettings, Rgba, Screen, ScreenCluster, Ticker};
 
 use crate::fonts::Fonts;
 use crate::layout::{self, VisibleTicker};
+
+// Secondary "market movers" tape (pinned to the bottom of each screen).
+/// Pixel width of one mover entry on the secondary tape.
+pub const MOVERS_BOX_WIDTH: i32 = 680;
+/// Tape height as a fraction of screen height, clamped to a sane pixel range.
+const MOVERS_TAPE_HEIGHT_FRAC: f32 = 0.20;
+const MOVERS_TAPE_MIN_H: f32 = 70.0;
+const MOVERS_TAPE_MAX_H: f32 = 220.0;
+
+/// Height of the movers tape for a given screen height.
+pub fn movers_tape_height(screen_height: f32) -> f32 {
+    (screen_height * MOVERS_TAPE_HEIGHT_FRAC).clamp(MOVERS_TAPE_MIN_H, MOVERS_TAPE_MAX_H)
+}
 
 // Ticker box geometry (from the Go constants).
 const TICKER_BOX_HEIGHT: f32 = 240.0;
@@ -246,6 +259,104 @@ pub fn fps_meter<T: Renderer>(
     paint.set_text_align(Align::Left);
     paint.set_text_baseline(Baseline::Middle);
     let _ = canvas.fill_text(pad * 2.0, pad + box_h / 2.0, &text, &paint);
+}
+
+/// Render the secondary gainers/losers tape pinned to the bottom of the screen.
+/// Like the primary tape it spans the whole cluster (so it's continuous across
+/// screens) but scrolls at its own speed and shows a compact `SYMBOL price +x%`
+/// entry per mover, colored green/red by direction.
+#[allow(clippy::too_many_arguments)]
+pub fn render_movers_tape<T: Renderer>(
+    canvas: &mut Canvas<T>,
+    fonts: &Fonts,
+    settings: &PresentationSettings,
+    screen: &Screen,
+    _cluster: &ScreenCluster,
+    movers: &[Mover],
+    global_offset: f32,
+    screen_offset: f32,
+) {
+    if movers.is_empty() {
+        return;
+    }
+    let width = screen.width as f32;
+    let tape_height = movers_tape_height(screen.height as f32);
+    let strip_top = screen.height as f32 - tape_height;
+
+    // Strip background + a subtle top divider.
+    let mut bg = Path::new();
+    bg.rect(0.0, strip_top, width, tape_height);
+    canvas.fill_path(&bg, &Paint::color(Color::rgba(0, 0, 0, 190)));
+    let mut divider = Path::new();
+    divider.rect(0.0, strip_top, width, 2.0);
+    canvas.fill_path(&divider, &Paint::color(Color::rgba(255, 255, 255, 40)));
+
+    let visible = layout::visible_tickers(
+        global_offset,
+        screen_offset,
+        width,
+        movers.len(),
+        MOVERS_BOX_WIDTH,
+    );
+    for VisibleTicker { index, x } in visible {
+        if let Some(mover) = movers.get(index) {
+            draw_mover(canvas, fonts, settings, mover, x, strip_top, tape_height);
+        }
+    }
+}
+
+fn draw_mover<T: Renderer>(
+    canvas: &mut Canvas<T>,
+    fonts: &Fonts,
+    settings: &PresentationSettings,
+    mover: &Mover,
+    x: f32,
+    strip_top: f32,
+    tape_height: f32,
+) {
+    let mid_y = strip_top + tape_height / 2.0;
+    let font_size = (tape_height * 0.42).clamp(20.0, 72.0);
+    let pad = font_size * 0.9;
+    let gap = font_size * 0.5;
+    let box_right = x + MOVERS_BOX_WIDTH as f32;
+
+    let dir_color = if mover.todays_change_percentage < 0.0 {
+        color_of(&settings.down_color, Color::rgb(255, 51, 51))
+    } else {
+        color_of(&settings.up_color, Color::rgb(51, 255, 51))
+    };
+    let font_color = color_of(&settings.font_color, Color::white());
+
+    // Symbol (bold, left).
+    let mut sym = Paint::color(font_color);
+    sym.set_font(&[fonts.bold]);
+    sym.set_font_size(font_size);
+    sym.set_text_baseline(Baseline::Middle);
+    sym.set_text_align(Align::Left);
+    let _ = canvas.fill_text(x + pad, mid_y, &mover.symbol, &sym);
+
+    // Change % (bold, directional) anchored to the right edge of the box.
+    let change = format!("{:+.2}%", mover.todays_change_percentage);
+    let mut chg = Paint::color(dir_color);
+    chg.set_font(&[fonts.bold]);
+    chg.set_font_size(font_size);
+    chg.set_text_baseline(Baseline::Middle);
+    chg.set_text_align(Align::Right);
+    let _ = canvas.fill_text(box_right - pad, mid_y, &change, &chg);
+
+    // Price (light) right-aligned just left of the change %. Measuring the change
+    // width means a long (3+ digit) percentage can never overlap the price.
+    let change_w = canvas
+        .measure_text(0.0, 0.0, &change, &chg)
+        .map(|m| m.width())
+        .unwrap_or(0.0);
+    let price = format!("{:.2}", mover.price);
+    let mut pr = Paint::color(font_color);
+    pr.set_font(&[fonts.light]);
+    pr.set_font_size(font_size * 0.85);
+    pr.set_text_baseline(Baseline::Middle);
+    pr.set_text_align(Align::Right);
+    let _ = canvas.fill_text(box_right - pad - change_w - gap, mid_y, &price, &pr);
 }
 
 /// Centered red panel shown when the client is not connected to the leader.

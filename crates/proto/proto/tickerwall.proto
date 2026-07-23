@@ -62,6 +62,20 @@ message PriceUpdate {
   double price = 2;
 }
 
+// One entry in the secondary "market movers" tape (a top gainer or loser).
+// Sign of `todays_change_percentage` determines gainer (>=0) vs loser (<0).
+message Mover {
+  string symbol = 1;
+  double price = 2;
+  double todays_change = 3;
+  double todays_change_percentage = 4;
+}
+
+// The full set of movers shown on the secondary tape (top gainers then losers).
+message MarketMovers {
+  repeated Mover movers = 1;
+}
+
 message RGBA {
   int32 red = 1;
   int32 green = 2;
@@ -94,6 +108,8 @@ message PresentationSettings {
   bool show_fps = 9;
   int32 animation_duration_ms = 10;
   bool per_tick_updates = 11;
+  bool show_movers = 12;          // show the secondary gainers/losers tape
+  int32 movers_scroll_speed = 13; // independent speed for that tape (inverted; 1 = fastest)
 }
 
 // A partial settings update. Only set fields are applied; unset fields are left
@@ -110,6 +126,8 @@ message SettingsPatch {
   optional bool show_fps = 9;
   optional int32 animation_duration_ms = 10;
   optional bool per_tick_updates = 11;
+  optional bool show_movers = 12;
+  optional int32 movers_scroll_speed = 13;
 }
 
 enum AnnouncementType {
@@ -150,6 +168,7 @@ message JoinRequest {
 message Snapshot {
   ScreenCluster cluster = 1;
   repeated Ticker tickers = 2;
+  MarketMovers movers = 3;
 }
 
 message TickerSymbol {
@@ -165,6 +184,7 @@ message Update {
     PriceUpdate price = 4;
     Announcement announcement = 5;
     PresentationSettings settings = 6;
+    MarketMovers movers = 7;
   }
 }
 

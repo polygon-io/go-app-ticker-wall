@@ -11,8 +11,8 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use parking_lot::Mutex;
-use tickerwall_data::{latest_trading_day, MarketClient};
-use tickerwall_proto::{PriceUpdate, Ticker, Update, UpdateKind as Kind};
+use tickerwall_data::{latest_trading_day, MarketClient, MoverDirection};
+use tickerwall_proto::{MarketMovers, PriceUpdate, Ticker, Update, UpdateKind as Kind};
 use tokio::sync::{broadcast, mpsc, Notify};
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
@@ -29,6 +29,10 @@ pub const TICKER_AGGS_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
 /// How often company details / prices are refreshed (a true 5 minutes; the Go
 /// original said "5min" in a comment but actually used 500s).
 pub const TICKER_DETAILS_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
+/// How often the top gainers/losers tape is refreshed (they shift through the day).
+pub const MOVERS_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
+/// How many gainers and how many losers to show on the secondary tape (each).
+pub(crate) const MOVERS_PER_DIRECTION: usize = 10;
 /// Lead time added to an announcement's display timestamp so every screen shows
 /// it in sync.
 pub(crate) const ANNOUNCEMENT_LEAD_MS: i64 = 200;
@@ -59,6 +63,7 @@ impl Leader {
             settings: config.settings,
             tickers,
             screens: Vec::new(),
+            movers: Vec::new(),
         };
         let (tx, _) = broadcast::channel(BROADCAST_CAPACITY);
         Self {
@@ -85,7 +90,27 @@ impl Leader {
         info!("loading initial ticker data…");
         self.refresh_details(true).await?;
         self.refresh_aggs().await?;
+        // Movers are best-effort: a failure here shouldn't block startup.
+        if let Err(e) = self.refresh_movers().await {
+            warn!(error = %e, "initial movers load failed");
+        }
         info!("initial ticker data loaded");
+        Ok(())
+    }
+
+    /// Fetch top gainers + losers and broadcast them as the secondary tape.
+    async fn refresh_movers(&self) -> anyhow::Result<()> {
+        let gainers = self.data.get_market_movers(MoverDirection::Gainers).await?;
+        let losers = self.data.get_market_movers(MoverDirection::Losers).await?;
+
+        let mut movers = Vec::with_capacity(MOVERS_PER_DIRECTION * 2);
+        movers.extend(gainers.into_iter().take(MOVERS_PER_DIRECTION));
+        movers.extend(losers.into_iter().take(MOVERS_PER_DIRECTION));
+
+        self.state.lock().movers = movers.clone();
+        self.broadcast(Update {
+            kind: Some(Kind::Movers(MarketMovers { movers })),
+        });
         Ok(())
     }
 
@@ -148,9 +173,30 @@ impl Leader {
         }
         {
             let this = self.clone();
+            let cancel = cancel.clone();
             tokio::spawn(async move {
                 this.refresh_loop(cancel, TICKER_DETAILS_REFRESH_INTERVAL, true).await
             });
+        }
+        {
+            let this = self.clone();
+            tokio::spawn(async move { this.movers_loop(cancel).await });
+        }
+    }
+
+    /// Periodically refresh the gainers/losers tape. Errors are logged, not fatal.
+    async fn movers_loop(self: Arc<Self>, cancel: CancellationToken) {
+        let mut interval = tokio::time::interval(MOVERS_REFRESH_INTERVAL);
+        interval.tick().await; // consume the immediate first tick (loaded at startup)
+        loop {
+            tokio::select! {
+                _ = cancel.cancelled() => break,
+                _ = interval.tick() => {
+                    if let Err(e) = self.refresh_movers().await {
+                        error!(error = %e, "periodic movers refresh failed");
+                    }
+                }
+            }
         }
     }
 

@@ -1,7 +1,9 @@
 //! The leader's authoritative in-memory state and its configuration. Kept behind
 //! a `Mutex`; critical sections are short and never hold the lock across `.await`.
 
-use tickerwall_proto::{sort_and_tag_tickers, PresentationSettings, Screen, ScreenCluster, Ticker};
+use tickerwall_proto::{
+    sort_and_tag_tickers, Mover, PresentationSettings, Screen, ScreenCluster, Ticker,
+};
 
 /// Configuration used to build a [`crate::Leader`].
 pub struct Config {
@@ -18,6 +20,8 @@ pub struct LeaderState {
     pub tickers: Vec<Ticker>,
     /// Currently-connected screens, always sorted ascending by `index`.
     pub screens: Vec<Screen>,
+    /// Latest top gainers/losers for the secondary tape.
+    pub movers: Vec<Mover>,
 }
 
 impl LeaderState {
@@ -100,6 +104,7 @@ mod tests {
             settings: PresentationSettings::default(),
             tickers: Vec::new(),
             screens: Vec::new(),
+            movers: Vec::new(),
         }
     }
 

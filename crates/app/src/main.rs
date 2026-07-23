@@ -54,6 +54,10 @@ struct UpdateArgs {
     show_fps: Option<bool>,
     #[arg(long)]
     show_logos: Option<bool>,
+    #[arg(long)]
+    show_movers: Option<bool>,
+    #[arg(long)]
+    movers_scroll_speed: Option<i32>,
     /// RGBA as "r,g,b,a" (e.g. 255,255,255,255).
     #[arg(long)]
     up_color: Option<String>,
@@ -140,6 +144,14 @@ struct ServerArgs {
     /// Show an FPS meter on each screen.
     #[arg(long, default_value_t = false)]
     show_fps: bool,
+
+    /// Show the secondary top gainers/losers tape at the bottom.
+    #[arg(long, default_value_t = true)]
+    show_movers: bool,
+
+    /// Scroll speed of the movers tape (inverted; 1 is fastest).
+    #[arg(long, default_value_t = 5)]
+    movers_scroll_speed: i32,
 }
 
 #[derive(Args)]
@@ -189,6 +201,8 @@ async fn run_server(args: ServerArgs) -> Result<()> {
     settings.animation_duration_ms = args.animation_duration;
     settings.per_tick_updates = args.per_tick_updates;
     settings.show_fps = args.show_fps;
+    settings.show_movers = args.show_movers;
+    settings.movers_scroll_speed = args.movers_scroll_speed;
 
     let tickers = args
         .tickers
@@ -245,6 +259,8 @@ async fn run_update(args: UpdateArgs) -> Result<()> {
         per_tick_updates: args.per_tick_updates,
         show_fps: args.show_fps,
         show_logos: args.show_logos,
+        show_movers: args.show_movers,
+        movers_scroll_speed: args.movers_scroll_speed,
         up_color: parse_color_opt(&args.up_color)?,
         down_color: parse_color_opt(&args.down_color)?,
         bg_color: parse_color_opt(&args.bg_color)?,
@@ -339,6 +355,20 @@ fn print_snapshot(snapshot: &tickerwall_proto::Snapshot) {
     for t in &snapshot.tickers {
         println!(" -  {}  [  {}  ]", t.symbol, t.company_name);
     }
+
+    let movers = snapshot
+        .movers
+        .as_ref()
+        .map(|m| m.movers.as_slice())
+        .unwrap_or(&[]);
+    println!(" ------------ ");
+    println!("Market movers: {}", movers.len());
+    for m in movers {
+        println!(
+            " -  {:<6} {:>10.2}  ({:+.2}%)",
+            m.symbol, m.price, m.todays_change_percentage
+        );
+    }
 }
 
 /// Default presentation settings (mirror the Go CLI defaults).
@@ -355,6 +385,8 @@ fn default_settings() -> PresentationSettings {
         show_fps: false,
         animation_duration_ms: 500,
         per_tick_updates: true,
+        show_movers: true,
+        movers_scroll_speed: 5,
     }
 }
 

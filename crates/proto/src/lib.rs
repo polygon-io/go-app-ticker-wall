@@ -10,8 +10,9 @@ pub mod pb {
 // Re-export the common types at the crate root for ergonomics.
 pub use pb::{
     leader_client, leader_server, update::Kind as UpdateKind, Agg, AnnounceRequest, Announcement,
-    AnnouncementAnimation, AnnouncementType, Empty, JoinRequest, PresentationSettings, PriceUpdate,
-    Rgba, Screen, ScreenCluster, SettingsPatch, Snapshot, Ticker, TickerSymbol, Update,
+    AnnouncementAnimation, AnnouncementType, Empty, JoinRequest, MarketMovers, Mover,
+    PresentationSettings, PriceUpdate, Rgba, Screen, ScreenCluster, SettingsPatch, Snapshot, Ticker,
+    TickerSymbol, Update,
 };
 
 impl ScreenCluster {
@@ -76,6 +77,12 @@ impl PresentationSettings {
         }
         if let Some(v) = patch.per_tick_updates {
             self.per_tick_updates = v;
+        }
+        if let Some(v) = patch.show_movers {
+            self.show_movers = v;
+        }
+        if let Some(v) = patch.movers_scroll_speed {
+            self.movers_scroll_speed = v;
         }
     }
 }
