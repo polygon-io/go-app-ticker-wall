@@ -16,9 +16,11 @@ const UPPER_ROW_FONT_SIZE: f32 = 96.0;
 const BOTTOM_ROW_FONT_SIZE: f32 = 58.0;
 const MAX_COMPANY_NAME_CHARS: usize = 14;
 
-// Mini graph.
-const GRAPH_SIZE: f32 = 180.0;
-const GRAPH_VIEWPORT_PERCENTAGE: f32 = 0.04;
+// Full-bleed graph: opacity of the translucent area fill under the price line,
+// and how far (as a fraction of box height) the line is kept off the top/bottom
+// edges so it never clips into the box border.
+const GRAPH_FILL_ALPHA: f32 = 0.22;
+const GRAPH_VERTICAL_PAD: f32 = 0.12;
 
 pub fn color_of(c: &Option<Rgba>, fallback: Color) -> Color {
     match c {
@@ -79,12 +81,27 @@ fn render_ticker<T: Renderer>(
 ) {
     render_ticker_bg(canvas, settings, screen, ticker_offset);
 
+    // Box interior geometry (matches render_ticker_bg).
+    let box_top = (screen.height as f32 / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
+    let box_left = ticker_offset + (TICKER_BOX_MARGIN / 2.0);
+    let box_width = settings.ticker_box_width as f32 - TICKER_BOX_MARGIN;
+
+    // Directional color drives both the change text and the graph.
+    let directional = if ticker.price_change_percentage < 0.0 {
+        color_of(&settings.down_color, Color::rgb(255, 51, 51))
+    } else {
+        color_of(&settings.up_color, Color::rgb(51, 255, 51))
+    };
+
+    // Full-bleed price graph filling the whole box, behind the text.
+    draw_graph(canvas, ticker, box_left, box_top, box_width, TICKER_BOX_HEIGHT, directional);
+
+    // --- Text layer, drawn on top of the graph ---
     let offset_left = ticker_offset + (TICKER_BOX_MARGIN / 2.0) + TICKER_BOX_PADDING;
-    let offset_top = (screen.height as f32 / 2.0) - (TICKER_BOX_HEIGHT / 2.0);
     let offset_right =
         (ticker_offset + settings.ticker_box_width as f32 - TICKER_BOX_MARGIN) - TICKER_BOX_PADDING;
-    let upper_row_top = offset_top + (TICKER_BOX_HEIGHT * 0.33);
-    let lower_row_top = offset_top + (TICKER_BOX_HEIGHT * 0.66);
+    let upper_row_top = box_top + (TICKER_BOX_HEIGHT * 0.33);
+    let lower_row_top = box_top + (TICKER_BOX_HEIGHT * 0.66);
 
     let font_color = color_of(&settings.font_color, Color::white());
 
@@ -114,13 +131,6 @@ fn render_ticker<T: Renderer>(
     bottom_paint.set_text_align(Align::Left);
     let _ = canvas.fill_text(offset_left, lower_row_top, &name, &bottom_paint);
 
-    // Directional color for change + graph.
-    let directional = if ticker.price_change_percentage < 0.0 {
-        color_of(&settings.down_color, Color::rgb(255, 51, 51))
-    } else {
-        color_of(&settings.up_color, Color::rgb(51, 255, 51))
-    };
-
     // Change: +diff (+pct%) lower-right, directional color.
     let price_diff = ticker.price - ticker.previous_close_price;
     let change = format!("{:+.2} ({:+.2}%)", price_diff, ticker.price_change_percentage);
@@ -130,20 +140,19 @@ fn render_ticker<T: Renderer>(
     change_paint.set_text_baseline(Baseline::Middle);
     change_paint.set_text_align(Align::Right);
     let _ = canvas.fill_text(offset_right, lower_row_top, &change, &change_paint);
-
-    // Mini graph.
-    let graph_top = (screen.height as f32 / 2.0) - (GRAPH_SIZE / 2.0);
-    draw_graph(canvas, ticker, offset_left + 400.0, graph_top, GRAPH_SIZE, GRAPH_SIZE, directional);
 }
 
+/// Full-bleed price graph filling the whole ticker box, drawn behind the text:
+/// a translucent area fill under a solid price line, plus an endpoint dot. Prices
+/// are normalized to the aggregate min/max so the line uses the full box height.
 #[allow(clippy::too_many_arguments)]
 fn draw_graph<T: Renderer>(
     canvas: &mut Canvas<T>,
     ticker: &Ticker,
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
+    box_left: f32,
+    box_top: f32,
+    box_width: f32,
+    box_height: f32,
     color: Color,
 ) {
     let points = ticker.aggs.len();
@@ -151,55 +160,64 @@ fn draw_graph<T: Renderer>(
         return;
     }
 
-    let dx = w / (points as f32 - 1.0);
-    let mut sx = vec![0.0f32; points];
-    let mut sy = vec![0.0f32; points];
+    // Inset by the corner radius so the fill never spills past the box's rounded
+    // corners (avoids needing a clip/scissor).
+    let inset = TICKER_BOX_BORDER_RADIUS;
+    let x0 = box_left + inset;
+    let y0 = box_top + inset;
+    let w = box_width - inset * 2.0;
+    let h = box_height - inset * 2.0;
+    let bottom = y0 + h;
 
     let mut min = f32::INFINITY;
     let mut max = f32::NEG_INFINITY;
-    for (i, agg) in ticker.aggs.iter().enumerate() {
-        let p = agg.price as f32;
+    for a in &ticker.aggs {
+        let p = a.price as f32;
         min = min.min(p);
         max = max.max(p);
-        sy[i] = p;
-        sx[i] = x + i as f32 * dx;
     }
+    let range = (max - min).max(f32::EPSILON);
 
-    let mid_range = (min + max) / 2.0;
-    if mid_range == 0.0 {
-        return;
-    }
+    // Keep the line off the very top/bottom edges.
+    let v_pad = h * GRAPH_VERTICAL_PAD;
+    let usable_h = h - v_pad * 2.0;
+    let dx = w / (points as f32 - 1.0);
+    let xy = |i: usize| -> (f32, f32) {
+        let norm = (ticker.aggs[i].price as f32 - min) / range; // 0 at low, 1 at high
+        (x0 + i as f32 * dx, y0 + v_pad + (1.0 - norm) * usable_h)
+    };
 
-    // Normalize into a fraction of viewport movement, tracking the largest swing.
-    let mut abs_max = 0.0f32;
-    for v in sy.iter_mut() {
-        *v = (*v - mid_range) / mid_range;
-        abs_max = abs_max.max(v.abs());
-    }
-    // Squish if it exceeds the allowed viewport range.
-    if abs_max > GRAPH_VIEWPORT_PERCENTAGE {
-        for v in sy.iter_mut() {
-            *v = (*v / abs_max) * GRAPH_VIEWPORT_PERCENTAGE;
-        }
-    }
-    // Map the normalized value into pixels.
-    let middle = h / 2.0;
-    let base_multiplier = middle / GRAPH_VIEWPORT_PERCENTAGE;
-    for v in sy.iter_mut() {
-        *v = (y + h) - ((base_multiplier * *v) + middle);
-    }
-
-    let mut line = Path::new();
-    line.move_to(sx[0], sy[0]);
+    // Translucent area under the line (line points, then down to the baseline).
+    let (sx, sy) = xy(0);
+    let mut area = Path::new();
+    area.move_to(sx, sy);
     for i in 1..points {
-        line.line_to(sx[i], sy[i]);
+        let (x, y) = xy(i);
+        area.line_to(x, y);
+    }
+    let (ex, _) = xy(points - 1);
+    area.line_to(ex, bottom);
+    area.line_to(x0, bottom);
+    area.close();
+    let mut fill_color = color;
+    fill_color.a = GRAPH_FILL_ALPHA;
+    canvas.fill_path(&area, &Paint::color(fill_color));
+
+    // Solid price line on top of the fill.
+    let mut line = Path::new();
+    line.move_to(sx, sy);
+    for i in 1..points {
+        let (x, y) = xy(i);
+        line.line_to(x, y);
     }
     let mut stroke = Paint::color(color);
-    stroke.set_line_width(4.0);
+    stroke.set_line_width(6.0);
     canvas.stroke_path(&line, &stroke);
 
+    // Endpoint dot at the latest price.
+    let (lx, ly) = xy(points - 1);
     let mut dot = Path::new();
-    dot.circle(sx[points - 1], sy[points - 1], 6.0);
+    dot.circle(lx, ly, 8.0);
     canvas.fill_path(&dot, &Paint::color(color));
 }
 

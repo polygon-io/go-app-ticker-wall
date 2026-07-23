@@ -20,8 +20,10 @@ use tracing::{error, info, warn};
 /// Broadcast bus capacity. Slow clients that fall this far behind get a `Lagged`
 /// error and skip ahead rather than blocking the bus.
 const BROADCAST_CAPACITY: usize = 1024;
-/// Aggregate bar size, in minutes (matches the Go `rangeSize` of 10).
-pub(crate) const AGG_RANGE_MINUTES: i32 = 10;
+/// Aggregate bar size, in minutes. The Go original used 10, giving only ~45
+/// points across a full session — visibly jagged on the full-bleed graph. At 2
+/// minutes we get ~225 points: smooth without being noisy (1 minute was too busy).
+pub(crate) const AGG_RANGE_MINUTES: i32 = 2;
 /// How often intraday aggregates are refreshed.
 pub const TICKER_AGGS_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
 /// How often company details / prices are refreshed (a true 5 minutes; the Go
