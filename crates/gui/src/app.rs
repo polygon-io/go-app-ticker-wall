@@ -8,9 +8,7 @@ use std::time::Instant;
 
 use femtovg::{renderer::OpenGl, Canvas, Color};
 use glutin::config::{ConfigTemplateBuilder, GlConfig};
-use glutin::context::{
-    ContextAttributesBuilder, NotCurrentGlContext, PossiblyCurrentContext,
-};
+use glutin::context::{ContextAttributesBuilder, NotCurrentGlContext, PossiblyCurrentContext};
 use glutin::display::{GetGlDisplay, GlDisplay};
 use glutin::surface::{GlSurface, Surface, SwapInterval, WindowSurface};
 use glutin_winit::{DisplayBuilder, GlWindow};
@@ -48,7 +46,12 @@ struct FpsCounter {
 
 impl FpsCounter {
     fn new() -> Self {
-        Self { last: None, accum_secs: 0.0, accum_frames: 0, display: 0.0 }
+        Self {
+            last: None,
+            accum_secs: 0.0,
+            accum_frames: 0,
+            display: 0.0,
+        }
     }
 
     /// Record a frame boundary and return the current averaged FPS.
@@ -105,16 +108,19 @@ impl App {
         let (window, gl_config) = display_builder
             .build(event_loop, template, |configs| {
                 configs
-                    .reduce(|a, b| if b.num_samples() > a.num_samples() { b } else { a })
+                    .reduce(|a, b| {
+                        if b.num_samples() > a.num_samples() {
+                            b
+                        } else {
+                            a
+                        }
+                    })
                     .expect("no GL config")
             })
             .expect("failed to build GL display");
 
         let window = window.expect("no window created");
-        let raw = window
-            .window_handle()
-            .expect("window handle")
-            .as_raw();
+        let raw = window.window_handle().expect("window handle").as_raw();
         let gl_display = gl_config.display();
 
         let context_attributes = ContextAttributesBuilder::new().build(Some(raw));
@@ -135,10 +141,8 @@ impl App {
         let context = not_current.make_current(&surface).expect("make current");
 
         // vsync so we don't spin at thousands of fps.
-        let _ = surface.set_swap_interval(
-            &context,
-            SwapInterval::Wait(NonZeroU32::new(1).unwrap()),
-        );
+        let _ =
+            surface.set_swap_interval(&context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()));
 
         let renderer =
             unsafe { OpenGl::new_from_function_cstr(|s| gl_display.get_proc_address(s)) }
@@ -252,12 +256,22 @@ impl App {
                 );
             }
 
-            self.notifications
-                .render(&mut state.canvas, &state.fonts, settings, cluster, &frame.screen);
+            self.notifications.render(
+                &mut state.canvas,
+                &state.fonts,
+                settings,
+                cluster,
+                &frame.screen,
+            );
 
             // FPS meter on top of everything (incl. any notification banner).
             if settings.show_fps {
-                draw::fps_meter(&mut state.canvas, &state.fonts, frame.screen.height as f32, fps);
+                draw::fps_meter(
+                    &mut state.canvas,
+                    &state.fonts,
+                    frame.screen.height as f32,
+                    fps,
+                );
             }
         }
 

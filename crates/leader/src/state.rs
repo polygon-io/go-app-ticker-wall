@@ -28,7 +28,7 @@ impl LeaderState {
     /// Build a `ScreenCluster` snapshot from the current settings + screens.
     pub fn cluster(&self) -> ScreenCluster {
         ScreenCluster {
-            settings: Some(self.settings.clone()),
+            settings: Some(self.settings),
             screens: self.screens.clone(),
         }
     }
@@ -111,16 +111,37 @@ mod tests {
     #[test]
     fn screens_stay_sorted_by_index() {
         let mut st = state();
-        st.add_screen(Screen { uuid: "b".into(), index: 20, width: 100, height: 10 });
-        st.add_screen(Screen { uuid: "a".into(), index: 10, width: 100, height: 10 });
-        st.add_screen(Screen { uuid: "c".into(), index: 30, width: 100, height: 10 });
+        st.add_screen(Screen {
+            uuid: "b".into(),
+            index: 20,
+            width: 100,
+            height: 10,
+        });
+        st.add_screen(Screen {
+            uuid: "a".into(),
+            index: 10,
+            width: 100,
+            height: 10,
+        });
+        st.add_screen(Screen {
+            uuid: "c".into(),
+            index: 30,
+            width: 100,
+            height: 10,
+        });
         assert_eq!(
-            st.screens.iter().map(|s| s.uuid.as_str()).collect::<Vec<_>>(),
+            st.screens
+                .iter()
+                .map(|s| s.uuid.as_str())
+                .collect::<Vec<_>>(),
             ["a", "b", "c"]
         );
         assert!(st.remove_screen("b"));
         assert_eq!(
-            st.screens.iter().map(|s| s.uuid.as_str()).collect::<Vec<_>>(),
+            st.screens
+                .iter()
+                .map(|s| s.uuid.as_str())
+                .collect::<Vec<_>>(),
             ["a", "c"]
         );
         assert!(!st.remove_screen("missing"));

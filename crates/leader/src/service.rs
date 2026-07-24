@@ -12,10 +12,11 @@ use tracing::{info, warn};
 
 use tickerwall_proto::{
     leader_server, AnnounceRequest, Announcement, Empty, JoinRequest, MarketMovers,
-    PresentationSettings, Screen, SettingsPatch, Snapshot, TickerSymbol, Update, UpdateKind as Kind,
+    PresentationSettings, Screen, SettingsPatch, Snapshot, TickerSymbol, Update,
+    UpdateKind as Kind,
 };
 
-use crate::{now_ms, LeaderState, Leader, AGG_RANGE_MINUTES, ANNOUNCEMENT_LEAD_MS};
+use crate::{now_ms, Leader, LeaderState, AGG_RANGE_MINUTES, ANNOUNCEMENT_LEAD_MS};
 
 /// Removes a screen from the cluster (and announces the change) when a client's
 /// stream is dropped — i.e. when the GUI disconnects.
@@ -96,7 +97,9 @@ impl leader_server::Leader for Leader {
         Ok(Response::new(Snapshot {
             cluster: Some(st.cluster()),
             tickers: st.tickers.clone(),
-            movers: Some(MarketMovers { movers: st.movers.clone() }),
+            movers: Some(MarketMovers {
+                movers: st.movers.clone(),
+            }),
         }))
     }
 
@@ -108,10 +111,10 @@ impl leader_server::Leader for Leader {
         let settings = {
             let mut st = self.state.lock();
             st.settings.apply_patch(&patch);
-            st.settings.clone()
+            st.settings
         };
         self.broadcast(Update {
-            kind: Some(Kind::Settings(settings.clone())),
+            kind: Some(Kind::Settings(settings)),
         });
         Ok(Response::new(settings))
     }
@@ -149,10 +152,7 @@ impl leader_server::Leader for Leader {
         Ok(Response::new(screen))
     }
 
-    async fn add_ticker(
-        &self,
-        request: Request<TickerSymbol>,
-    ) -> Result<Response<Empty>, Status> {
+    async fn add_ticker(&self, request: Request<TickerSymbol>) -> Result<Response<Empty>, Status> {
         let symbol = request.into_inner().symbol.to_uppercase();
         if symbol.is_empty() {
             return Err(Status::invalid_argument("empty ticker symbol"));
@@ -170,7 +170,11 @@ impl leader_server::Leader for Leader {
             .map_err(|e| Status::internal(format!("load ticker {symbol}: {e}")))?;
         if let Ok(aggs) = self
             .data
-            .get_today_aggs(tickerwall_data::latest_trading_day(), &symbol, AGG_RANGE_MINUTES)
+            .get_today_aggs(
+                tickerwall_data::latest_trading_day(),
+                &symbol,
+                AGG_RANGE_MINUTES,
+            )
             .await
         {
             ticker.aggs = aggs;

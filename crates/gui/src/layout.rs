@@ -20,7 +20,12 @@ pub fn now_nanos() -> u128 {
 /// The global scroll offset (in pixels) at `now_nanos`, reduced into `[0, tape)`
 /// where `tape = num_tickers * ticker_box_width`. Higher `scroll_speed` scrolls
 /// slower (it is inverted, matching the Go behavior: 1 is fastest).
-pub fn global_offset(now_nanos: u128, scroll_speed: i32, ticker_box_width: i32, num_tickers: usize) -> f32 {
+pub fn global_offset(
+    now_nanos: u128,
+    scroll_speed: i32,
+    ticker_box_width: i32,
+    num_tickers: usize,
+) -> f32 {
     let tape = num_tickers as f64 * ticker_box_width as f64;
     if tape <= 0.0 {
         return 0.0;
@@ -74,7 +79,7 @@ pub fn visible_tickers(
     let first = (localized / box_w).floor() as i64;
 
     // Safety cap: at most every box once, plus a full extra wrap for wide screens.
-    let max_boxes = (num_tickers * 2 + 4) as usize;
+    let max_boxes = num_tickers * 2 + 4;
     let mut i = first;
     loop {
         let x = (i as f32 * box_w) - localized;
@@ -117,8 +122,20 @@ mod tests {
         // boxes at x = 0, 1000, 2000 are visible (2500 wide -> 3 boxes).
         assert_eq!(v.len(), 3);
         assert_eq!(v[0], VisibleTicker { index: 0, x: 0.0 });
-        assert_eq!(v[1], VisibleTicker { index: 1, x: 1000.0 });
-        assert_eq!(v[2], VisibleTicker { index: 2, x: 2000.0 });
+        assert_eq!(
+            v[1],
+            VisibleTicker {
+                index: 1,
+                x: 1000.0
+            }
+        );
+        assert_eq!(
+            v[2],
+            VisibleTicker {
+                index: 2,
+                x: 2000.0
+            }
+        );
     }
 
     #[test]

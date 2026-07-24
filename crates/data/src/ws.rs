@@ -29,10 +29,7 @@ impl MarketClient {
 
         // Authenticate immediately; subscribe once the server acks auth_success.
         let auth = serde_json::json!({ "action": "auth", "params": self.api_key }).to_string();
-        write
-            .send(Message::Text(auth.into()))
-            .await
-            .context("send auth")?;
+        write.send(Message::Text(auth)).await.context("send auth")?;
 
         // "A" = per-second aggregates, "T" = individual trades.
         let prefix = if self.per_tick_updates { "T" } else { "A" };
@@ -41,8 +38,7 @@ impl MarketClient {
             .map(|s| format!("{prefix}.{s}"))
             .collect::<Vec<_>>()
             .join(",");
-        let subscribe =
-            serde_json::json!({ "action": "subscribe", "params": params }).to_string();
+        let subscribe = serde_json::json!({ "action": "subscribe", "params": params }).to_string();
 
         loop {
             tokio::select! {
@@ -60,7 +56,7 @@ impl MarketClient {
                             for event in parse_events(text.as_str()) {
                                 if is_auth_success(&event) {
                                     write
-                                        .send(Message::Text(subscribe.clone().into()))
+                                        .send(Message::Text(subscribe.clone()))
                                         .await
                                         .context("send subscribe")?;
                                     continue;

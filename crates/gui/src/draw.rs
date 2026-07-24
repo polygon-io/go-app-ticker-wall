@@ -37,7 +37,7 @@ const MAX_COMPANY_NAME_CHARS: usize = 14;
 // Full-bleed graph: opacity of the translucent area fill under the price line,
 // and how far (as a fraction of box height) the line is kept off the top/bottom
 // edges so it never clips into the box border.
-const GRAPH_FILL_ALPHA: f32 = 0.22;
+const GRAPH_FILL_ALPHA: f32 = 0.42;
 const GRAPH_VERTICAL_PAD: f32 = 0.12;
 
 pub fn color_of(c: &Option<Rgba>, fallback: Color) -> Color {
@@ -87,7 +87,13 @@ fn render_ticker_bg<T: Renderer>(
     let box_width = settings.ticker_box_width as f32 - TICKER_BOX_MARGIN;
 
     let mut path = Path::new();
-    path.rounded_rect(left, top, box_width, TICKER_BOX_HEIGHT, TICKER_BOX_BORDER_RADIUS);
+    path.rounded_rect(
+        left,
+        top,
+        box_width,
+        TICKER_BOX_HEIGHT,
+        TICKER_BOX_BORDER_RADIUS,
+    );
     let bg = color_of(&settings.ticker_box_bg_color, Color::rgb(20, 20, 20));
     canvas.fill_path(&path, &Paint::color(bg));
 }
@@ -115,7 +121,15 @@ fn render_ticker<T: Renderer>(
     };
 
     // Full-bleed price graph filling the whole box, behind the text.
-    draw_graph(canvas, ticker, box_left, box_top, box_width, TICKER_BOX_HEIGHT, directional);
+    draw_graph(
+        canvas,
+        ticker,
+        box_left,
+        box_top,
+        box_width,
+        TICKER_BOX_HEIGHT,
+        directional,
+    );
 
     // --- Text layer, drawn on top of the graph ---
     let offset_left = ticker_offset + (TICKER_BOX_MARGIN / 2.0) + TICKER_BOX_PADDING;
@@ -155,7 +169,10 @@ fn render_ticker<T: Renderer>(
     // Change: +diff (+pct%) lower-right. White — the graph behind the box already
     // supplies the up/down color, so a colored value here is redundant.
     let price_diff = ticker.price - ticker.previous_close_price;
-    let change = format!("{:+.2} ({:+.2}%)", price_diff, ticker.price_change_percentage);
+    let change = format!(
+        "{:+.2} ({:+.2}%)",
+        price_diff, ticker.price_change_percentage
+    );
     let mut change_paint = Paint::color(font_color);
     change_paint.set_font(&[fonts.light]);
     change_paint.set_font_size(BOTTOM_ROW_FONT_SIZE);
@@ -224,28 +241,12 @@ fn draw_graph<T: Renderer>(
     let mut fill_color = color;
     fill_color.a = GRAPH_FILL_ALPHA;
     canvas.fill_path(&area, &Paint::color(fill_color));
-
-    // Solid price line on top of the fill.
-    let mut line = Path::new();
-    line.move_to(sx, sy);
-    for i in 1..points {
-        let (x, y) = xy(i);
-        line.line_to(x, y);
-    }
-    let mut stroke = Paint::color(color);
-    stroke.set_line_width(6.0);
-    canvas.stroke_path(&line, &stroke);
 }
 
 /// Small FPS readout pinned to the top-left corner. Shown only when the
 /// `show_fps` presentation setting is enabled. Sizes itself off the screen
 /// height so it stays legible from a 300px dev window up to a 1080p wall.
-pub fn fps_meter<T: Renderer>(
-    canvas: &mut Canvas<T>,
-    fonts: &Fonts,
-    screen_height: f32,
-    fps: f32,
-) {
+pub fn fps_meter<T: Renderer>(canvas: &mut Canvas<T>, fonts: &Fonts, screen_height: f32, fps: f32) {
     let font_size = (screen_height * 0.06).clamp(20.0, 64.0);
     let pad = font_size * 0.4;
     let text = format!("{fps:.0} FPS");
@@ -326,7 +327,12 @@ fn draw_mover<T: Renderer>(
     // Divider at this entry's left edge, separating it from the previous one.
     let div_margin = tape_height * 0.24;
     let mut divider = Path::new();
-    divider.rect(x, strip_top + div_margin, 3.0, tape_height - div_margin * 2.0);
+    divider.rect(
+        x,
+        strip_top + div_margin,
+        3.0,
+        tape_height - div_margin * 2.0,
+    );
     canvas.fill_path(&divider, &Paint::color(Color::rgba(255, 255, 255, 60)));
 
     let dir_color = if mover.todays_change_percentage < 0.0 {
@@ -395,7 +401,13 @@ pub fn system_panel<T: Renderer>(
     let from_top = (screen.height as f32 / 2.0) - (panel_height / 2.0);
 
     let mut path = Path::new();
-    path.rounded_rect(padding, from_top, window_width - (padding * 2.0), panel_height, 5.0);
+    path.rounded_rect(
+        padding,
+        from_top,
+        window_width - (padding * 2.0),
+        panel_height,
+        5.0,
+    );
     canvas.fill_path(&path, &Paint::color(Color::rgba(255, 0, 0, 222)));
 
     let mut text = Paint::color(Color::rgba(255, 255, 255, 255));

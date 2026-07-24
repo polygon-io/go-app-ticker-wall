@@ -35,8 +35,8 @@ impl Notification {
             // oscillations made the banner visibly jitter up/down as it left;
             // `in_back` winds up once and slides off cleanly.
             1 => (ease::in_back, ease::out_bounce), // Bounce
-            2 => (ease::in_quint, ease::out_quint),    // Ease
-            3 => (ease::in_back, ease::out_back),      // Back
+            2 => (ease::in_quint, ease::out_quint), // Ease
+            3 => (ease::in_back, ease::out_back),   // Back
             _ => (ease::in_elastic, ease::out_elastic), // Elastic (default; oscillation is expected here)
         };
         Self {

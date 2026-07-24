@@ -1,5 +1,5 @@
-# Rust rewrite of the ticker wall (see docs/ARCHITECTURE.md for the Go original this replaces,
-# and the approved plan for the target design). Coexists with the Go module during the rewrite.
+# Ticker wall — Cargo workspace. Builds the `tickerwall` binary (crates/app).
+# See docs/ARCHITECTURE.md for the design.
 [workspace]
 resolver = "2"
 members = [
@@ -22,6 +22,8 @@ repository = "https://github.com/massive-com/go-app-ticker-wall"
 tonic = "0.12"
 prost = "0.13"
 tonic-build = "0.12"
+# Vendored protoc so builds need no system protobuf compiler (hermetic in CI).
+protoc-bin-vendored = "3"
 
 # async runtime
 tokio = { version = "1", features = ["full"] }

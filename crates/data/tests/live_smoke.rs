@@ -38,7 +38,11 @@ async fn rest_smoke() {
         .get_today_aggs(latest_trading_day(), "AAPL", 10)
         .await
         .expect("get_today_aggs(AAPL)");
-    eprintln!("AAPL -> {} aggregate bars for {}", aggs.len(), latest_trading_day());
+    eprintln!(
+        "AAPL -> {} aggregate bars for {}",
+        aggs.len(),
+        latest_trading_day()
+    );
 }
 
 #[tokio::test]

@@ -301,11 +301,7 @@ impl ClusterClient {
     }
 
     pub fn settings(&self) -> Option<PresentationSettings> {
-        self.inner
-            .read()
-            .cluster
-            .as_ref()
-            .and_then(|c| c.settings)
+        self.inner.read().cluster.as_ref().and_then(|c| c.settings)
     }
 
     pub fn cluster(&self) -> Option<ScreenCluster> {

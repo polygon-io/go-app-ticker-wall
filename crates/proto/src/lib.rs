@@ -11,8 +11,8 @@ pub mod pb {
 pub use pb::{
     leader_client, leader_server, update::Kind as UpdateKind, Agg, AnnounceRequest, Announcement,
     AnnouncementAnimation, AnnouncementType, Empty, JoinRequest, MarketMovers, Mover,
-    PresentationSettings, PriceUpdate, Rgba, Screen, ScreenCluster, SettingsPatch, Snapshot, Ticker,
-    TickerSymbol, Update,
+    PresentationSettings, PriceUpdate, Rgba, Screen, ScreenCluster, SettingsPatch, Snapshot,
+    Ticker, TickerSymbol, Update,
 };
 
 impl ScreenCluster {
@@ -107,7 +107,6 @@ mod tests {
             width,
             height: 300,
             index,
-            ..Default::default()
         }
     }
 
@@ -115,7 +114,11 @@ mod tests {
     fn screen_global_offset_sums_preceding_widths() {
         let cluster = ScreenCluster {
             settings: None,
-            screens: vec![screen("a", 10, 1920), screen("b", 20, 1080), screen("c", 30, 800)],
+            screens: vec![
+                screen("a", 10, 1920),
+                screen("b", 20, 1080),
+                screen("c", 30, 800),
+            ],
         };
         assert_eq!(cluster.screen_global_offset("a"), 0.0);
         assert_eq!(cluster.screen_global_offset("b"), 1920.0);
@@ -148,9 +151,18 @@ mod tests {
     #[test]
     fn sort_and_tag_orders_by_symbol() {
         let mut tickers = vec![
-            Ticker { symbol: "NVDA".into(), ..Default::default() },
-            Ticker { symbol: "AAPL".into(), ..Default::default() },
-            Ticker { symbol: "MSFT".into(), ..Default::default() },
+            Ticker {
+                symbol: "NVDA".into(),
+                ..Default::default()
+            },
+            Ticker {
+                symbol: "AAPL".into(),
+                ..Default::default()
+            },
+            Ticker {
+                symbol: "MSFT".into(),
+                ..Default::default()
+            },
         ];
         sort_and_tag_tickers(&mut tickers);
         assert_eq!(tickers[0].symbol, "AAPL");

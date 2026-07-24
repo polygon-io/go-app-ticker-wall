@@ -138,7 +138,10 @@ impl Leader {
     async fn refresh_aggs(&self) -> anyhow::Result<()> {
         let day = latest_trading_day();
         for symbol in self.symbols() {
-            let aggs = self.data.get_today_aggs(day, &symbol, AGG_RANGE_MINUTES).await?;
+            let aggs = self
+                .data
+                .get_today_aggs(day, &symbol, AGG_RANGE_MINUTES)
+                .await?;
             let updated = {
                 let mut st = self.state.lock();
                 let Some(t) = st.tickers.iter_mut().find(|t| t.symbol == symbol) else {
@@ -168,14 +171,16 @@ impl Leader {
             let this = self.clone();
             let cancel = cancel.clone();
             tokio::spawn(async move {
-                this.refresh_loop(cancel, TICKER_AGGS_REFRESH_INTERVAL, false).await
+                this.refresh_loop(cancel, TICKER_AGGS_REFRESH_INTERVAL, false)
+                    .await
             });
         }
         {
             let this = self.clone();
             let cancel = cancel.clone();
             tokio::spawn(async move {
-                this.refresh_loop(cancel, TICKER_DETAILS_REFRESH_INTERVAL, true).await
+                this.refresh_loop(cancel, TICKER_DETAILS_REFRESH_INTERVAL, true)
+                    .await
             });
         }
         {
@@ -203,7 +208,12 @@ impl Leader {
     /// Periodic refresh loop. `details` selects details-vs-aggregates. A failed
     /// refresh is logged but never terminates the loop (one bad API call
     /// shouldn't take the leader down).
-    async fn refresh_loop(self: Arc<Self>, cancel: CancellationToken, period: Duration, details: bool) {
+    async fn refresh_loop(
+        self: Arc<Self>,
+        cancel: CancellationToken,
+        period: Duration,
+        details: bool,
+    ) {
         let mut interval = tokio::time::interval(period);
         interval.tick().await; // consume the immediate first tick (already loaded at startup)
         loop {
@@ -260,7 +270,9 @@ impl Leader {
                 let data = self.data.clone();
                 let tx = tx.clone();
                 let child = child.clone();
-                tokio::spawn(async move { data.listen_for_price_updates(&symbols, tx, child).await })
+                tokio::spawn(
+                    async move { data.listen_for_price_updates(&symbols, tx, child).await },
+                )
             };
 
             tokio::select! {

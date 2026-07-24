@@ -1,14 +1,11 @@
-//! `tickerwall` CLI entry point. Phase 3 wires up `server` and `describe`; the
-//! `gui`, `update`, and `announce` subcommands plus full config precedence land
-//! in phase 6.
-
-mod config;
+//! `tickerwall` CLI entry point: the `server`, `gui`, `update`, `announce`, and
+//! `describe` subcommands. Configuration resolves as flags > environment
+//! (`TW_*`) > built-in defaults, via clap's native `env` support.
 
 use std::sync::Arc;
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
-use config::FileConfig;
 use tickerwall_proto::{PresentationSettings, Rgba};
 use tokio_util::sync::CancellationToken;
 
@@ -91,23 +88,28 @@ struct AnnounceArgs {
 #[derive(Args)]
 struct GuiArgs {
     /// Leader gRPC address.
-    #[arg(short = 'l', long, default_value = "http://localhost:6886")]
+    #[arg(
+        short = 'l',
+        long,
+        env = "TW_LEADER",
+        default_value = "http://localhost:6886"
+    )]
     leader: String,
 
     /// Window height in pixels.
-    #[arg(short = 'y', long, default_value_t = 300)]
+    #[arg(short = 'y', long, env = "TW_SCREEN_HEIGHT", default_value_t = 300)]
     screen_height: i32,
 
     /// Window width in pixels.
-    #[arg(short = 'x', long, default_value_t = 1920)]
+    #[arg(short = 'x', long, env = "TW_SCREEN_WIDTH", default_value_t = 1920)]
     screen_width: i32,
 
     /// Index of this screen in the wall (used for left-to-right ordering).
-    #[arg(short = 'i', long, default_value_t = 1)]
+    #[arg(short = 'i', long, env = "TW_SCREEN_INDEX", default_value_t = 1)]
     screen_index: i32,
 
     /// Borderless-fullscreen on the current monitor (for kiosk deployment).
-    #[arg(short = 'f', long, default_value_t = false)]
+    #[arg(short = 'f', long, env = "TW_FULLSCREEN", default_value_t = false)]
     fullscreen: bool,
 }
 
@@ -118,39 +120,44 @@ struct ServerArgs {
     api_key: String,
 
     /// Comma-separated ticker symbols to display.
-    #[arg(short = 't', long, default_value = "AAPL,AMD,NVDA,SBUX,META,HOOD")]
+    #[arg(
+        short = 't',
+        long,
+        env = "TW_TICKERS",
+        default_value = "AAPL,AMD,NVDA,SBUX,META,HOOD"
+    )]
     tickers: String,
 
     /// Port the gRPC server binds to.
-    #[arg(short = 'g', long, default_value_t = 6886)]
+    #[arg(short = 'g', long, env = "TW_GRPC_PORT", default_value_t = 6886)]
     grpc_port: u16,
 
     /// Scroll speed (inverted: 1 is fastest).
-    #[arg(short = 's', long, default_value_t = 8)]
+    #[arg(short = 's', long, env = "TW_SCROLL_SPEED", default_value_t = 8)]
     scroll_speed: i32,
 
     /// Ticker box width in pixels.
-    #[arg(short = 'w', long, default_value_t = 1000)]
+    #[arg(short = 'w', long, env = "TW_TICKER_BOX_WIDTH", default_value_t = 1000)]
     ticker_box_width: i32,
 
     /// Notification animation duration in milliseconds.
-    #[arg(long, default_value_t = 500)]
+    #[arg(long, env = "TW_ANIMATION_DURATION", default_value_t = 500)]
     animation_duration: i32,
 
     /// Update on every trade (true) vs once per second (false).
-    #[arg(long, default_value_t = true)]
+    #[arg(long, env = "TW_PER_TICK_UPDATES", default_value_t = true)]
     per_tick_updates: bool,
 
     /// Show an FPS meter on each screen.
-    #[arg(long, default_value_t = false)]
+    #[arg(long, env = "TW_SHOW_FPS", default_value_t = false)]
     show_fps: bool,
 
     /// Show the secondary top gainers/losers tape at the bottom.
-    #[arg(long, default_value_t = true)]
+    #[arg(long, env = "TW_SHOW_MOVERS", default_value_t = true)]
     show_movers: bool,
 
     /// Scroll speed of the movers tape (inverted; 1 is fastest).
-    #[arg(long, default_value_t = 5)]
+    #[arg(long, env = "TW_MOVERS_SCROLL_SPEED", default_value_t = 5)]
     movers_scroll_speed: i32,
 }
 
@@ -334,7 +341,10 @@ fn print_snapshot(snapshot: &tickerwall_proto::Snapshot) {
         }
     };
     if let Some(s) = &cluster.settings {
-        println!("Global Viewport Size: {} px", cluster.global_viewport_size());
+        println!(
+            "Global Viewport Size: {} px",
+            cluster.global_viewport_size()
+        );
         println!("Animation Duration: {} ms", s.animation_duration_ms);
         println!("Scroll Speed: {}", s.scroll_speed);
         println!("Ticker Box Width: {} px", s.ticker_box_width);

@@ -1,5 +1,5 @@
-//! Embedded Roboto fonts, registered into the femtovg canvas. Reuses the same
-//! TTF assets as the Go app (repo-root `fonts/`), embedded at compile time.
+//! Embedded Roboto fonts, registered into the femtovg canvas. The TTF assets live
+//! in the crate (`crates/gui/assets/fonts/`) and are embedded at compile time.
 
 use anyhow::{anyhow, Result};
 use femtovg::{Canvas, FontId, Renderer};
@@ -12,8 +12,8 @@ pub struct Fonts {
     pub bold: FontId,
 }
 
-const LIGHT: &[u8] = include_bytes!("../../../fonts/Roboto-Light.ttf");
-const BOLD: &[u8] = include_bytes!("../../../fonts/Roboto-Bold.ttf");
+const LIGHT: &[u8] = include_bytes!("../assets/fonts/Roboto-Light.ttf");
+const BOLD: &[u8] = include_bytes!("../assets/fonts/Roboto-Bold.ttf");
 
 impl Fonts {
     pub fn load<T: Renderer>(canvas: &mut Canvas<T>) -> Result<Self> {

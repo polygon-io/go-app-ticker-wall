@@ -171,7 +171,11 @@ impl MarketClient {
             .into_iter()
             .map(|t| {
                 // Prefer the last trade price; fall back to today's close.
-                let price = if t.last_trade.p != 0.0 { t.last_trade.p } else { t.day.c };
+                let price = if t.last_trade.p != 0.0 {
+                    t.last_trade.p
+                } else {
+                    t.day.c
+                };
                 Mover {
                     symbol: t.ticker,
                     price,
