@@ -234,6 +234,7 @@ impl App {
                 global,
                 screen_offset,
                 frame.screen.width as f32,
+                dpi,
             );
 
             // Secondary gainers/losers tape at the bottom, on its own speed.
@@ -253,6 +254,7 @@ impl App {
                     &frame.movers,
                     movers_global,
                     screen_offset,
+                    dpi,
                 );
             }
 

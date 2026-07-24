@@ -61,6 +61,7 @@ pub fn render_tickers<T: Renderer>(
     global_offset: f32,
     screen_offset: f32,
     window_width: f32,
+    dpi: f32,
 ) {
     let visible = layout::visible_tickers(
         global_offset,
@@ -71,9 +72,17 @@ pub fn render_tickers<T: Renderer>(
     );
     for VisibleTicker { index, x } in visible {
         if let Some(ticker) = tickers.get(index) {
+            // Snap the box to the device-pixel grid so scrolling text keeps a
+            // constant glyph sub-pixel phase (no letter-spacing jitter).
+            let x = snap_to_pixel(x, dpi);
             render_ticker(canvas, fonts, settings, content_height, ticker, x);
         }
     }
+}
+
+/// Snap a logical coordinate so it lands on a whole device pixel.
+fn snap_to_pixel(x: f32, dpi: f32) -> f32 {
+    (x * dpi).round() / dpi
 }
 
 fn render_ticker_bg<T: Renderer>(
@@ -279,6 +288,7 @@ pub fn render_movers_tape<T: Renderer>(
     movers: &[Mover],
     global_offset: f32,
     screen_offset: f32,
+    dpi: f32,
 ) {
     if movers.is_empty() {
         return;
@@ -304,6 +314,8 @@ pub fn render_movers_tape<T: Renderer>(
     );
     for VisibleTicker { index, x } in visible {
         if let Some(mover) = movers.get(index) {
+            // Same device-pixel snap as the primary tape so the text doesn't jitter.
+            let x = snap_to_pixel(x, dpi);
             draw_mover(canvas, fonts, settings, mover, x, strip_top, tape_height);
         }
     }
