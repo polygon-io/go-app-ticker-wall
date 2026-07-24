@@ -1,0 +1,18 @@
+[package]
+name = "tickerwall-leader"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tickerwall-proto.workspace = true
+tickerwall-data.workspace = true
+tonic.workspace = true
+prost.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+futures.workspace = true
+async-stream.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+anyhow.workspace = true

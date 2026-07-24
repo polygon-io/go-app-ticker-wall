@@ -2,123 +2,136 @@
   <img src="misc/ticker-wall.gif" />
 </p>
 
-# Massive.com - Ticker Wall
+# Massive.com — Ticker Wall
 
-The Massive.com ticker wall is an open source, cross platform, scalable ticker tape. It is meant to be scalable across many machines to eliminate the need for expensive specialty hardware for achieving a scrolling ticker tape. It is cross platform compatible, so it runs on mac, windows or linux ( only mac and linux tested ). All interaction is done via the CLI. There is a gRPC interface for more advanced integrations.
+The Massive.com ticker wall is an open source, cross-platform, horizontally
+scalable scrolling stock ticker tape. It spans any number of side-by-side
+displays (on one machine or many) to form a single continuous tape, so you can
+build a large ticker wall out of commodity screens instead of specialty hardware.
+It runs on macOS and Linux. All interaction is via the CLI, with a gRPC interface
+underneath for advanced integrations.
 
-We use it at the [Massive.com](https://massive.com) office, but we also wanted it to be general enough to suite a broad group of needs, so most interactions and settings are configurable.
+We use it at the [Massive.com](https://massive.com) office, and it's configurable
+enough to suit a broad range of setups.
 
-# Getting Started
+This is a **Rust** application (a Cargo workspace under `crates/`). It replaces the
+original Go implementation; see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for
+the design and [`docs/legacy/ARCHITECTURE.md`](docs/legacy/ARCHITECTURE.md) for the
+retired Go version.
 
-There are 2 components to a ticker wall cluster. There is 1x Leader and N number of GUIs. The leader can also be run on the same system as a GUI, and there is no minimum for the number of GUIs. You can start with 1 screen, then continue to add more and it will dynamically adjust in real-time.
+## Features
 
-Download the latest release binary from the [Releases Page](https://github.com/massive-com/go-app-ticker-wall/releases)
+- One shared, continuous scrolling tape across N screens, updating live.
+- Full-bleed intraday price graph behind every ticker (green/red by direction).
+- A second **top gainers/losers** tape pinned to the bottom, on its own speed.
+- Full-screen **announcements** with eased slide-in/out animations.
+- Live control of colors, speeds, and layout over gRPC — no restart needed.
+- Optional on-screen **FPS meter** for performance checks.
 
-**Start the Leader**
+## Getting Started
 
-We must start the leader so that the GUIs can connect and get their data to display.
+There are two roles in a cluster: **1 leader** and **N GUIs**. The leader can run
+on the same machine as a GUI, and there's no minimum number of GUIs — start with
+one screen and add more; the tape re-layouts in real time.
 
-`./tickerwall server -a {myMassiveApiKey}`
+Download the latest binary from the
+[Releases page](https://github.com/massive-com/ticker-wall/releases), or
+build from source (below).
 
-**Run the GUI**
+**Start the leader** (pulls data, serves gRPC on `:6886`):
 
-`./tickerwall gui`
+```
+tickerwall server -a <MASSIVE_API_KEY>      # or set TW_API_KEY
+```
 
-**To run a second GUI**
+**Run a GUI** (each is one screen/window):
 
-`./tickerwall gui --index=2`
+```
+tickerwall gui --screen-index 10
+tickerwall gui --screen-index 20            # a second screen, to its right
+```
 
-# Configuration
+## Configuration
 
-Configuration of the applications are achieved via cli flags > env variables > configuration file. The application will search for a configuration file with the name of 'tickerwall' which can be in .yml, .json or .toml format. Environment variables overwrite config file settings, and command line flags overwrite env variables.
+Configuration resolves as **CLI flags > environment variables > built-in
+defaults**. Environment variables are the flag name uppercased with a `TW_`
+prefix — e.g. `--api-key` → `TW_API_KEY`, `--scroll-speed` → `TW_SCROLL_SPEED`,
+`--ticker-box-width` → `TW_TICKER_BOX_WIDTH`.
 
-# Updating settings
+Run `tickerwall <subcommand> --help` for the full flag list.
 
-You can use the cli to update attributes of the cluster in real-time. Here are some examples:
+## Updating settings
 
-Updating the scroll speed:
+Update cluster attributes in real time (only the flags you pass change):
 
-      ./tickerwall update --scroll-speed=5
+```
+tickerwall update --scroll-speed 5
+tickerwall update --bg-color 255,255,255,255
+tickerwall update --movers-scroll-speed 8        # the bottom tape's own speed
+tickerwall update --show-fps true                # toggle the FPS meter
+```
 
-Updating the background color to white:
-
-      ./tickerwall update --bg-color=255,255,255,255
-
-# Making Announcements
+## Making announcements
 
 <p align="center">
   <img src="misc/ticker-announcement.gif"/>
 </p>
 
-You can make announcements using the ticker wall using the following command:
-
-      ./tickerwall announce "Big Announcement!"
-
-You can change the color and animations:
-
-      ./tickerwall announce "Big Success!" --animation=ease --type=success
-
-# Describe a Cluster
-
-You can describe a running cluster using the following:
-
-      ./tickerwall describe
-
-Which should generate output that is similar to:
-
 ```
-Global Viewport Size: 5760 px
-Animation Duration: 500 ms
-Scroll Speed: 5
-Ticker Box Width: 1100 px
-Per Tick Updates: true
-Screen Count: 3
-Screen Details:
- ------------
- Screen ID: 73452516-62af-4720-be0a-b2d3f6bfc575
- - Width 1920 px
- - Height 300 px
- - Index 10
- ------------
- Screen ID: fd98cf41-c59d-46e5-8c12-832612912674
- - Width 1920 px
- - Height 300 px
- - Index 20
- ------------
- Screen ID: 5aac2e7a-23ef-4ba2-950a-58d434c42dfe
- - Width 1920 px
- - Height 300 px
- - Index 30
- ------------
-Ticker count: 6
-Tickers:
- -  AAPL  [  Apple Inc.  ]
- -  AMD  [  Advanced Micro Devices  ]
- -  NVDA  [  Nvidia Corp  ]
- -  SBUX  [  Starbucks Corp  ]
- -  META  [  Meta Platforms, Inc. Class A Common Stock  ]
- -  HOOD  [  Robinhood Markets, Inc. Class A Common Stock  ]
+tickerwall announce "Big Announcement!"
+tickerwall announce "Big Success!" --animation ease --type success
 ```
 
-# Building from Source Prerequisites
+## Describe a cluster
 
-### Linux
+```
+tickerwall describe
+```
 
-On linux, the application requires X11. So you will need: `libgl1-mesa-dev` and `xorg-dev` packages.
+Prints the current settings, connected screens, tickers, and top movers.
 
-### Mac
+## Building from source
 
-No additional packages are required for Mac.
+```
+cargo build --release        # produces target/release/tickerwall
+```
 
-### Windows
+`protoc` is **not** required — the protobuf compiler is vendored via
+`protoc-bin-vendored` and used automatically at build time.
 
-Not sure, haven't been able to test it.
+**Linux** needs X11 + OpenGL dev headers for the GUI:
 
-# TODO / Wish List
+```
+# Debian/Ubuntu
+sudo apt-get install -y libgl1-mesa-dev xorg-dev
+```
 
-These are not in order of priority.
+**macOS** needs no extra packages. Windows is untested.
 
--   Run inside docker container.
--   Some kind of build process. tests?
+## Development
 
--   v2.0 - Instead of 2 separate roles ( Server and GUI(s)), use raft to establish the leader amongst GUIs.
+A `justfile` provides shortcuts (`brew install just`):
+
+```
+just build      # cargo build
+just test       # cargo test --workspace
+just lint       # cargo fmt --check + clippy -D warnings
+just server     # run the leader (needs TW_API_KEY)
+just gui        # run one GUI screen
+just run        # leader + two GUI screens
+```
+
+CI (GitHub Actions) builds, tests, lints (fmt + clippy) on Linux and macOS, and
+publishes release binaries for `x86_64-unknown-linux-gnu` and
+`aarch64-apple-darwin` on version tags (`v*`).
+
+## Deployment
+
+The deployed screens boot straight into the GUI fullscreen with no window manager
+(bare X). See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the kiosk setup.
+
+## TODO / Wish list
+
+- Config-file layer (`tickerwall.{yml,json,toml}`) — currently flags + env only.
+- Run inside a Docker container.
+- v2.0 — replace the explicit leader with Raft-based election among the GUIs.

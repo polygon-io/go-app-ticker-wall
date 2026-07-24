@@ -1,0 +1,63 @@
+# Ticker wall — Cargo workspace. Builds the `tickerwall` binary (crates/app).
+# See docs/ARCHITECTURE.md for the design.
+[workspace]
+resolver = "2"
+members = [
+    "crates/proto",
+    "crates/data",
+    "crates/leader",
+    "crates/client",
+    "crates/gui",
+    "crates/app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/massive-com/ticker-wall"
+
+[workspace.dependencies]
+# gRPC / protobuf
+tonic = "0.12"
+prost = "0.13"
+tonic-build = "0.12"
+# Vendored protoc so builds need no system protobuf compiler (hermetic in CI).
+protoc-bin-vendored = "3"
+
+# async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+futures = "0.3"
+
+# diagnostics
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+thiserror = "1"
+
+# misc
+uuid = { version = "1", features = ["v4"] }
+parking_lot = "0.12"
+
+# market-data client
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+tokio-util = "0.7"
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+serde_yaml = "0.9"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+chrono-tz = "0.10"
+
+async-stream = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+
+# internal crates
+tickerwall-proto = { path = "crates/proto" }
+tickerwall-data = { path = "crates/data" }
+tickerwall-leader = { path = "crates/leader" }
+tickerwall-client = { path = "crates/client" }
+tickerwall-gui = { path = "crates/gui" }
