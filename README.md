@@ -35,7 +35,7 @@ on the same machine as a GUI, and there's no minimum number of GUIs — start wi
 one screen and add more; the tape re-layouts in real time.
 
 Download the latest binary from the
-[Releases page](https://github.com/massive-com/go-app-ticker-wall/releases), or
+[Releases page](https://github.com/massive-com/ticker-wall/releases), or
 build from source (below).
 
 **Start the leader** (pulls data, serves gRPC on `:6886`):

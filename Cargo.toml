@@ -15,7 +15,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/massive-com/go-app-ticker-wall"
+repository = "https://github.com/massive-com/ticker-wall"
 
 [workspace.dependencies]
 # gRPC / protobuf
