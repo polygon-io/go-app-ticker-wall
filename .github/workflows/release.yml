@@ -9,6 +9,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # Oldest glibc the Linux binary must run on (the ticker-wall kiosks are on
+  # Ubuntu 20.04 / glibc 2.31). Raise this when the fleet is upgraded.
+  GLIBC_FLOOR: "2.31"
 
 jobs:
   release:
@@ -36,8 +39,42 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Build release binary
+      # ubuntu-latest ships a much newer glibc than the deployment machines, and
+      # glibc is backward- but not forward-compatible: a default build aborts at
+      # startup with "version `GLIBC_2.39' not found". zig supplies stub headers
+      # for the older glibc so the binary only requires symbols the kiosks have.
+      - name: Install cargo-zigbuild
+        if: runner.os == 'Linux'
+        run: |
+          python3 -m pip install --user ziglang
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: taiki-e/install-action@v2
+        if: runner.os == 'Linux'
+        with:
+          tool: cargo-zigbuild
+
+      - name: Build release binary (Linux, glibc ${{ env.GLIBC_FLOOR }})
+        if: runner.os == 'Linux'
+        run: |
+          cargo zigbuild --release --locked \
+            --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }} --bin tickerwall
+
+      - name: Build release binary (macOS)
+        if: runner.os == 'macOS'
         run: cargo build --release --locked --target ${{ matrix.target }} --bin tickerwall
+
+      # Fail the release rather than shipping a binary the kiosks cannot exec.
+      - name: Verify glibc requirements
+        if: runner.os == 'Linux'
+        run: |
+          bin="target/${{ matrix.target }}/release/tickerwall"
+          max=$(objdump -T "$bin" | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sort -Vu | tail -1)
+          echo "highest glibc symbol required: $max (floor: GLIBC_$GLIBC_FLOOR)"
+          newest=$(printf '%s\nGLIBC_%s\n' "$max" "$GLIBC_FLOOR" | sort -Vu | tail -1)
+          if [ "$newest" != "GLIBC_$GLIBC_FLOOR" ]; then
+            echo "::error::binary requires $max, newer than the GLIBC_$GLIBC_FLOOR floor"
+            exit 1
+          fi
 
       - name: Package
         run: |
